@@ -1,9 +1,7 @@
 """Functions for classification evaluation. Create ROC curves and search depth rankings. """
+from typing import Sequence, TypeVar, Optional, List, Tuple, Union, Any, Callable
 import numpy as np
-from pysp.stats.pdist import SequenceEncodableStatisticAccumulator, SequenceEncodableProbabilityDistribution, \
-    ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory
-
-from typing import Sequence, TypeVar, Optional, List, Tuple, Union
+from pysp.stats.pdist import SequenceEncodableProbabilityDistribution
 
 T = TypeVar('T')
 
@@ -84,6 +82,20 @@ def roc_curve(pos_x: Union[List[float], np.ndarray], neg_x:  Union[List[float], 
 
 def roc_percentiles(pos_x: Union[List[float], np.ndarray], neg_x:  Union[List[float], np.ndarray],
                     perc_points: Union[List[float], np.ndarray]) -> np.ndarray:
+    """
+    Computes the ROC (Receiver Operating Characteristic) curve percentiles.
+
+    This function calculates the false alarm rate (FA) and detection probability (PD)
+    at specified percentile points based on the ROC curve.
+
+    Args:
+        pos_x (Union[List[float], np.ndarray]): Scores or probabilities for positive samples.
+        neg_x (Union[List[float], np.ndarray]): Scores or probabilities for negative samples.
+        perc_points (Union[List[float], np.ndarray]): Percentile points at which to compute the ROC values.
+
+    Returns:
+        np.ndarray: A 2D array where each row contains [FA, PD] values corresponding to the given percentiles.
+    """
 
     pd, fa = roc_curve(pos_x, neg_x)
     rv = []
@@ -101,7 +113,33 @@ def roc_percentiles(pos_x: Union[List[float], np.ndarray], neg_x:  Union[List[fl
 
     return np.asarray(rv)
 
-def ranking_depth(x, k=None, comp_func = lambda a, b: a == b):
+def ranking_depth(
+    x: List[Tuple[Any, List[Tuple[Any, float]]]],
+    k: Optional[int] = None,
+    comp_func: Callable[[Any, Any], bool] = lambda a, b: a == b
+) -> Union[np.ndarray, List[np.ndarray]]:
+    """
+    Computes the ranking depth for a set of entries based on a comparison function.
+
+    This function calculates the ranks of matching entries in a list of scored items
+    for each input entry. If `k` is specified, only the top `k` ranks are returned.
+
+    Args:
+        x (List[Tuple[Any, List[Tuple[Any, float]]]]): A list of entries where each entry is a tuple.
+            The first element of the tuple is the target value, and the second element is a list of
+            tuples containing candidate values and their associated scores.
+        k (Optional[int], optional): The number of top ranks to return for each entry. If `None`, all ranks
+            are returned. Defaults to `None`.
+        comp_func (Callable[[Any, Any], bool], optional): A comparison function that determines whether
+            a candidate value matches the target value. Defaults to `lambda a, b: a == b`.
+
+    Returns:
+        Union[np.ndarray, List[np.ndarray]]:
+            - If `k` is specified, returns a 2D NumPy array of shape `(len(x), k)` where each row contains
+              the ranks of the top `k` matching entries for the corresponding input entry.
+            - If `k` is `None`, returns a list of 1D NumPy arrays, where each array contains all ranks of
+              matching entries for the corresponding input entry.
+    """
 
     if k is not None:
         retval = np.zeros((len(x), k))

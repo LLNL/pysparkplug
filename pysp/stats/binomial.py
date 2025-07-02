@@ -10,7 +10,7 @@ import numpy as np
 from numpy.random import RandomState
 from pysp.utils.vector import gammaln
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
-    StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder
+    StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder, EncodedDataSequence
 
 from typing import Optional, Dict, List, Union, Tuple, Any, Sequence
 
@@ -18,17 +18,25 @@ E = Tuple[np.ndarray, np.ndarray, np.ndarray, int, int]
 
 
 class BinomialDistribution(SequenceEncodableProbabilityDistribution):
+    """BinomialDistribution object used for Binomial
+    .. math::
+
+        f(x | n, p) = {n \choose x} p^x (1-p)^{n-x}, \: min\_val \leq x < min\_val+n.
+
+    Attributes:
+        p (float): Proportion for binomial distribution, between (0,1.0].
+        log_p (float): Logrithim of p above.
+        log_1p (float): Logrithim of 1-p, p defined above.
+        n (int): Number of trials in binomial distribution, n > 0.
+        min_val (Optional[int]): Change domain of binomial from (0,n-1) to (min_val, n-min_val).
+        name (Optional[str]): Assign a name to the instance of BinomialDistribution.
+        keys (Optional[str]): All BinomialDistributions with same keys are same distributions.
+
+    """
 
     def __init__(self, p: float, n: int, min_val: Optional[int] = None, name: Optional[str] = None,
                  keys: Optional[str] = None) -> None:
-        """BinomialDistribution object used for x~Binomial(n,p) with support (min_val, n-min_val-1).
-
-        Supports data types of int between (0, n-1) or (min_val, n-min_val-1) if min_val is not None.
-        Log-probability mass for BinomialDistribution(n,p),
-
-        log(f(x|n,p)) = log(n!) - log((n-x)!) - log(x!) + x*log(p) + (1-x)*log(1-p),
-
-        for x in [0,n-1) or [min_val, n-1-min_val), else -inf.
+        """Create instance of BinomialDistribution object.
 
         Args:
             p (float): Proportion for binomial distribution, between (0,1.0].
@@ -37,21 +45,13 @@ class BinomialDistribution(SequenceEncodableProbabilityDistribution):
             name (Optional[str]): Assign a name to the instance of BinomialDistribution.
             keys (Optional[str]): All BinomialDistributions with same keys are same distributions.
 
-        Attributes:
-            p (float): Proportion for binomial distribution, between (0,1.0].
-            log_p (float): Logrithm of p above.
-            log_1p (float): Logrithm of 1-p, p defined above.
-            n (int): Number of trials in binomial distribution, n > 0.
-            min_val (Optional[int]): Change domain of binomial from (0,n-1) to (min_val, n-min_val).
-            name (Optional[str]): Assign a name to the instance of BinomialDistribution.
-            keys (Optional[str]): All BinomialDistributions with same keys are same distributions.
         """
-        if p <= 0.0 or p >= 1.0:
+        if p <= 0.0 or p >= 1.0 or np.isnan(p):
             raise Exception('Binomial distribution requires p in [0,1]')
         else:
             self.p = p
 
-        if n < 0 or np.isinf(n):
+        if n < 0 or np.isinf(n) or np.isnan(n):
             raise Exception('Binomial distribution requires n > 0.')
         else:
             self.n = n
@@ -76,7 +76,8 @@ class BinomialDistribution(SequenceEncodableProbabilityDistribution):
             x (int): Integer value for density evaluation.
 
         Returns:
-            Probability mass of x for binomial(n,p) with min_val=min_val. 0.0 if x is not in support.
+            float: Probability mass of x for binomial(n,p) with min_val=min_val. 0.0 if x is not in support.
+
         """
         return np.exp(self.log_density(x))
 
@@ -89,7 +90,7 @@ class BinomialDistribution(SequenceEncodableProbabilityDistribution):
             x (int): Integer value for density evaluation.
 
         Returns:
-            Log-probability mass of x for binomial(n,p) with min_val=min_val. -inf if x is not in support.
+            float: Log-probability mass of x for binomial(n,p) with min_val=min_val. -inf if x is not in support.
         """
         n = self.n
         if self.min_val is not None:
@@ -99,21 +100,11 @@ class BinomialDistribution(SequenceEncodableProbabilityDistribution):
 
         return (gammaln(n+1) - gammaln(xx + 1) - gammaln(n - xx + 1)) + self.log_1p * (n - xx) + self.log_p * xx
 
-    def seq_log_density(self, x: E) -> np.ndarray:
-        """Vectorized evaluation of log-density for sequence encoded data.
+    def seq_log_density(self, x: 'BinomialEncodedDataSequence') -> np.ndarray:
+        if not isinstance(x, BinomialEncodedDataSequence):
+            raise Exception('BinomialDistribution.seq_log_density() requires BinomialEncodedDataSequence.')
 
-        Input value x must be obtained from a call to BinomialDataEncoder.seq_encode(data). Returns numpy array
-        of log-density evaluated at all observations contained in encoded data x.
-
-        Args:
-            x (Tuple[np.ndarray, np.ndarray, np.ndarray, int, int]): containing unique values in x, indices of ux to
-                reconstruct x, numpy array of x, min value of x, and max value of x.
-
-        Returns:
-            Numpy array of log-density evaluated at all observations contained in encoded data x.
-
-        """
-        ux, ix, _, _, _ = x
+        ux, ix, _, _, _ = x.data
         n = self.n
         gn = gammaln(n+1)
 
@@ -149,27 +140,24 @@ class BinomialDistribution(SequenceEncodableProbabilityDistribution):
             return BinomialEstimator(name=self.name, keys=self.keys)
         else:
             return BinomialEstimator(max_val=self.n, min_val=self.min_val, pseudo_count=pseudo_count,
-                                     suff_stat=self.p * self.n * pseudo_count, name=self.name)
+                                     suff_stat=self.p * self.n * pseudo_count, name=self.name, keys=self.keys)
 
     def dist_to_encoder(self) -> 'BinomialDataEncoder':
-        """Creates a BinomialDataEncoder object for seqeunce encoding data.
-
-        Returns:
-            BinomialDataEncoder object.
-        """
         return BinomialDataEncoder()
 
 
 class BinomialSampler(DistributionSampler):
+    """BinomialSampler object used to draw samples from BinomialDistribution.
 
+    Attributes:
+        dist (BinomialDistribution): BinomialDistribution to sample from.
+        seed (Optional[int]): Seed for setting random number generator.
+
+    """
     def __init__(self, dist: BinomialDistribution, seed: Optional[int] = None) -> None:
-        """BinomialSampler object used to draw samples from BinomialDistribution.
+        """Create instance of BinomialSampler.
 
         Args:
-            dist (BinomialDistribution): BinomialDistribution to sample from.
-            seed (Optional[int]): Seed for setting random number generator.
-
-        Attributes:
             dist (BinomialDistribution): BinomialDistribution to sample from.
             seed (Optional[int]): Seed for setting random number generator.
 
@@ -184,7 +172,7 @@ class BinomialSampler(DistributionSampler):
             size (Optional[int]): Number of samples to draw from BinomialSampler (1 if size is None).
 
         Returns:
-            An integer sample from BinomialDistribution(n,p,min_val), or List[int] of samples with length = size.
+            Union[int, List[int]]: An integer sample from BinomialDistribution(n,p,min_val), or List[int] of samples with length = size.
 
         """
         rv = self.rng.binomial(n=self.dist.n, p=self.dist.p, size=size)
@@ -202,26 +190,28 @@ class BinomialSampler(DistributionSampler):
 
 
 class BinomialAccumulator(SequenceEncodableStatisticAccumulator):
+    """BinomialAccumulator object used for aggregating sufficient statistics of BinomialDistribution.
 
-    def __init__(self, max_val: Optional[int] = None, min_val: Optional[int] = None,
+    Sufficient statistics (sum, count).
+
+    Attributes:
+        sum (float): Aggregates the sum of all data observations.
+        count (float): Aggregates the number of weighted-data observations used in accumulating sum.
+        max_val (Optional[int]): Largest integer value encountered while accumulating sufficient statistics.
+        min_val (Optional[int]): Smallest integer value encountered while accumulating sufficient statistics.
+        name (Optional[str]): Assign a name to the instance of BinomialAccumulator.
+        key (Optional[str]): All BinomialAccumulators with same key will have suff-stats merged.
+
+    """
+    def __init__(self, max_val: Optional[int] = None, min_val: Optional[int] = 0,
                  name: Optional[str] = None, keys: Optional[str] = None) -> None:
-        """BinomialAccumulator object used for aggregating sufficient statistics of BinomialDistribution.
-
-        Sufficient statistics (sum, count).
+        """BinomialAccumulator object.
 
         Args:
             max_val (Optional[int]): Largest integer value encountered while accumulating sufficient statistics.
             min_val (Optional[int]): Smallest integer value encountered while accumulating sufficient statistics.
             name (Optional[str]): Assign a name to the instance of BinomialAccumulator.
             keys (Optional[str]): All BinomialAccumulators with same keys will have suff-stats merged.
-
-        Attributes:
-            sum (float): Aggregates the sum of all data observations.
-            count (float): Aggregates the number of weighted-data observations used in accumulating sum.
-            max_val (Optional[int]): Largest integer value encountered while accumulating sufficient statistics.
-            min_val (Optional[int]): Smallest integer value encountered while accumulating sufficient statistics.
-            name (Optional[str]): Assign a name to the instance of BinomialAccumulator.
-            key (Optional[str]): All BinomialAccumulators with same key will have suff-stats merged.
 
         """
         self.sum = 0.0
@@ -232,20 +222,6 @@ class BinomialAccumulator(SequenceEncodableStatisticAccumulator):
         self.min_val = min_val
 
     def update(self, x: int, weight: float, estimate: Optional['BinomialDistribution']) -> None:
-        """Accumulates Binomial sufficient statistics for weighted single observation.
-
-        Add x*weight to attribute sum, and increase the count by weight.
-
-        Args:
-            x (int): Data observed.
-            weight (float): Weight for observation.
-            estimate (Optional[BinomialDistribution]): Previous estimate of BinomialDistribution obtained from
-                prior data.
-
-        Returns:
-            None (updates BinomialAccumulator sufficient statistics.)
-
-        """
         self.sum += x * weight
         self.count += weight
 
@@ -260,33 +236,10 @@ class BinomialAccumulator(SequenceEncodableStatisticAccumulator):
             self.max_val = max(self.max_val, x)
 
     def initialize(self, x: int, weight: float, rng: Optional[RandomState]) -> None:
-        """Initialize BinomialAccumulator sufficient statistics for one weighted observation.
-
-        Args:
-            x (int): Data observed.
-            weight (float): Weight for observation.
-            rng (Optional[RandomState]): RandomState not needed. No randomness in initialization.
-
-        Returns:
-            None (updates BinomialAccumulator sufficient statistics.)
-
-        """
         self.update(x, weight, None)
 
-    def seq_update(self, x: E, weights: np.ndarray, estimate: Optional['BinomialDistribution']) -> None:
-        """Accumulates Binomial sufficient statistics for encoded sequence.
-
-        Args:
-            x (E): Encoded sequence of observations.
-            weights (np.ndarray): Numpy array of floats for weighting each observation.
-            estimate (Optional[BinomialDistribution]): Previous estimate of BinomialDistribution obtained from
-                prior data.:
-
-        Returns:
-            None
-
-        """
-        _, _, xx, min_val, max_val = x
+    def seq_update(self, x: 'BinomialEncodedDataSequence', weights: np.ndarray, estimate: Optional['BinomialDistribution']) -> None:
+        _, _, xx, min_val, max_val = x.data
 
         self.sum += np.sum(xx * weights)
         self.count += np.sum(weights)
@@ -301,33 +254,10 @@ class BinomialAccumulator(SequenceEncodableStatisticAccumulator):
         else:
             self.max_val = max_val
 
-    def seq_initialize(self, x: E, weights: np.ndarray, rng: Optional[RandomState]) -> None:
-        """Vectorized initialization of BinomialAccumulator sufficient statistics with weights.
-
-        Calls seq_update().
-
-        Args:
-            x (E): Encoded sequence of observations.
-            weights (np.ndarray): Numpy array of floats for weighting each observation.
-            rng (Optional[RandomState]): RandomState not needed. No randomness in initialization.
-
-        Returns:
-            None
-
-        """
+    def seq_initialize(self, x: 'BinomialEncodedDataSequence', weights: np.ndarray, rng: Optional[RandomState]) -> None:
         self.seq_update(x, weights, None)
 
     def combine(self, suff_stat: Tuple[float, float, Optional[int], Optional[int]]) -> 'BinomialAccumulator':
-        """Combine the sufficient statistics of BinomialAccumulator with suff_stat.
-
-        Args:
-            suff_stat (Tuple[float, float, Optional[int], Optional[int]]): Count, sum of observations, optional min_val
-                observed, and optional max_val observed.
-
-        Returns:
-            None
-
-        """
         self.sum += suff_stat[1]
         self.count += suff_stat[0]
 
@@ -344,28 +274,9 @@ class BinomialAccumulator(SequenceEncodableStatisticAccumulator):
         return self
 
     def value(self) -> Tuple[float, float, Optional[int], Optional[int]]:
-        """Returns the sufficient statistics, and member variables min_val and max_val.
-
-        Returns:
-            Tuple[float,float, Optional[int], Optional[int]] containing suff stats count, sum and attributes min_val
-                max_val if they are not None.
-
-        """
         return self.count, self.sum, self.min_val, self.max_val
 
     def from_value(self, x: Tuple[float, float, Optional[int], Optional[int]]) -> 'BinomialAccumulator':
-        """Set BinomialAccumulator suff stats and member variables from suff_stat tuple defined in value().
-
-        Takes tuple of (count, sum, min_val, max_val) for setting values of BinomialAccumulator.
-
-        Args:
-            x (Tuple[float,float, Optional[int], Optional[int]]): containing suff stats count, sum and attributes
-                min_val max_val if they are not None.
-
-        Returns:
-            None, sets sufficient statistics and member variables.
-
-        """
         self.count = x[0]
         self.sum = x[1]
         self.min_val = x[2]
@@ -374,15 +285,6 @@ class BinomialAccumulator(SequenceEncodableStatisticAccumulator):
         return self
 
     def key_merge(self, stats_dict: Dict[str, Any]) -> None:
-        """Combines the sufficient statistics of BinomialAccumulators that have the same key value.
-
-        Args:
-            stats_dict (Dict[str, Any]): Dictionary for mapping keys to BinomialAccumulators.
-
-        Returns:
-            None
-
-        """
         if self.key is not None:
             if self.key in stats_dict:
                 stats_dict[self.key].combine(self.value())
@@ -390,31 +292,23 @@ class BinomialAccumulator(SequenceEncodableStatisticAccumulator):
                 stats_dict[self.key] = self
 
     def key_replace(self, stats_dict: Dict[str, Any]) -> None:
-        """Set sufficient statistics of object instance to matching instances with matching keys.
-
-        Args:
-            stats_dict (Dict[str, Any]): Maps member variable key to BinomialAccumualator with same key.
-
-        Returns:
-            None
-
-        """
         if self.key is not None:
             if self.key in stats_dict:
                 self.from_value(stats_dict[self.key].value())
 
     def acc_to_encoder(self) -> 'BinomialDataEncoder':
-        """Create BinomialDataEncoder object for encoding data.
-
-        Note: Used for seq_initialize.
-
-        Returns:
-            BinomialDataEncoder()
-
-        """
         return BinomialDataEncoder()
 
 class BinomialAccumulatorFactory(StatisticAccumulatorFactory):
+    """Creates BinomialAccumulatorFactory object.
+
+    Attributes:
+        max_val (Optional[int]): Max value for binomial observations.
+        min_val (Optional[int]): min value for binomial observations.
+        name (Optional[str]): Name the BinomialAccumulatorFactory.
+        keys (Optional[str]): Declare BinomialAccumulatorFactory objects for merging suff_stats.
+
+    """
 
     def __init__(self, max_val: Optional[int] = None, min_val: Optional[int] = 0, name: Optional[str] = None,
                  keys: Optional[str] = None) -> None:
@@ -426,29 +320,32 @@ class BinomialAccumulatorFactory(StatisticAccumulatorFactory):
             name (Optional[str]): Name the BinomialAccumulatorFactory.
             keys (Optional[str]): Declare BinomialAccumulatorFactory objects for merging suff_stats.
 
-        Return:
-             None
         """
         self.max_val = max_val
-        self.min_val = min_val
+        self.min_val = min_val if min_val else 0
         self.name = name
         self.keys = keys
 
     def make(self) -> 'BinomialAccumulator':
-        """Creates a BinomialAccumulator object.
-
-        Returns:
-            BinomialAccumulator.
-
-        """
         return BinomialAccumulator(self.max_val, self.min_val, self.name, self.keys)
 
 
 class BinomialEstimator(ParameterEstimator):
+    """Create a BinomialEstimator object for estimating BinomialDistribution.
+
+    Attributes:
+        max_val (Optional[int]): Set max value encountered.
+        min_val (Optional[int]): Set min value for BinomialDistribution.
+        pseudo_count (Optional[float]): Inflate sufficient statistic (p).
+        suff_stat (Optional[float]): Set p from prior observations.
+        name (Optional[str]): Assign a name to the estimator.
+        keys (Optional[str]): Assign key to BinomialEstimator designating all same key estimators to later be combined in accumualtation.
+
+    """
 
     def __init__(self, max_val: Optional[int] = None, min_val: Optional[int] = 0, pseudo_count: Optional[float] = None,
                  suff_stat: Optional[float] = None, name: Optional[str] = None, keys: Optional[str] = None) -> None:
-        """Create a BinomialEstimator object for estimating BinomialDistribution.
+        """Create a BinomialEstimator object.
 
         Args:
             max_val (Optional[int]): Set max value encountered.
@@ -456,19 +353,14 @@ class BinomialEstimator(ParameterEstimator):
             pseudo_count (Optional[float]): Inflate sufficient statistic (p).
             suff_stat (Optional[float]): Set p from prior observations.
             name (Optional[str]): Assign a name to the estimator.
-            keys (Optional[str]): Assign key to BinomialEstimator designating all same key estimators to later be combined,
-                in accumualtation.
-
-        Attributes:
-            max_val (Optional[int]): Set max value encountered.
-            min_val (Optional[int]): Set min value for BinomialDistribution.
-            pseudo_count (Optional[float]): Inflate sufficient statistic (p).
-            suff_stat (Optional[float]): Set p from prior observations.
-            name (Optional[str]): Assign a name to the estimator.
-            keys (Optional[str]): Assign key to BinomialEstimator designating all same key estimators to later be combined,
-                in accumualtation.
+            keys (Optional[str]): Assign key to BinomialEstimator designating all same key estimators to later be combined in accumualtation.
 
         """
+        if isinstance(keys, str) or keys is None:
+            self.keys = keys
+        else:
+            raise TypeError("BinomialEstimator requires keys to be of type 'str'.")
+
         self.pseudo_count = pseudo_count
         self.suff_stat = suff_stat
         self.keys = keys
@@ -477,12 +369,6 @@ class BinomialEstimator(ParameterEstimator):
         self.max_val = max_val
 
     def accumulator_factory(self) -> BinomialAccumulatorFactory:
-        """Creates a BinomialAccumulatorFactory object from member varaibles.
-
-        Returns:
-            BinomialAccumulatorFactory
-
-        """
         return BinomialAccumulatorFactory(self.max_val, self.min_val, self.name, self.keys)
 
     def estimate(self, nobs: Optional[float], suff_stat: Tuple[float, float, Optional[int], Optional[int]]):
@@ -490,7 +376,7 @@ class BinomialEstimator(ParameterEstimator):
 
         Note: nobs is not used here. Kept for consistency with other ParameterEstimators.
 
-        Memeber variable suff_stat is simply the proportion (p) of the BinomialDistributon passed to BinomalEstimator.
+        Member variable suff_stat is simply the proportion (p) of the BinomialDistributon passed to BinomalEstimator.
         The pseudo_count is used to inflate (p) in estimation.
 
         Args:
@@ -503,7 +389,7 @@ class BinomialEstimator(ParameterEstimator):
 
         """
 
-        count, sum, min_val, max_val = suff_stat
+        count, sum_, min_val, max_val = suff_stat
 
         if min_val is not None:
             if self.min_val is not None:
@@ -528,16 +414,16 @@ class BinomialEstimator(ParameterEstimator):
         if self.pseudo_count is not None and self.suff_stat is not None:
             pn = self.pseudo_count
             pp = self.suff_stat
-            p = (sum - min_val * count + pp) / ((count + pn) * n)
+            p = (sum_ - min_val * count + pp) / ((count + pn) * n)
 
         elif self.pseudo_count is not None and self.suff_stat is None:
             pn = self.pseudo_count
             pp = self.pseudo_count * 0.5 * n
-            p = (sum - min_val * count + pp) / ((count + pn) * n)
+            p = (sum_ - min_val * count + pp) / ((count + pn) * n)
 
         else:
             if count > 0 and n > 0:
-                p = (sum - min_val * count) / (count * n)
+                p = (sum_ - min_val * count) / (count * n)
             else:
                 p = 0.5
 
@@ -548,35 +434,19 @@ class BinomialDataEncoder(DataSequenceEncoder):
     """BinomialDataEncoder object used to encode Sequence[int] or ndarray[int]."""
 
     def __str__(self) -> str:
-        """Creates string name of BinomialDataEncoder.
-
-        Returns:
-            String name BinomialDataEncoder
-
-        """
         return 'BinomialDataEncoder'
 
     def __eq__(self, other: object ) -> bool:
-        """Define equality for BinomialDataEncoder objects.
-
-        Args:
-            other (object): Any object to be compares to BinomialDataEncoder.
-
-        Returns:
-            True is other is BinomialDataEncoder, else False.
-
-        """
         return isinstance(other, BinomialDataEncoder)
 
-    def seq_encode(self, x: Sequence[int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray, int, int]:
+    def seq_encode(self, x: Sequence[int]) -> 'BinomialEncodedDataSequence':
         """Encode List[int] for vectorized seq calls in Accumulator and Distribution.
 
         Args:
-            x (List[int]): List of integers.
+            x (Sequence[int]): Sequence of integers.
 
         Returns:
-            Tuple[np.ndarray, np.ndarray, np.ndarray, int, int] containing unique values in x, indices of ux to
-                reconstruct x, numpy array of x, min value of x, and max value of x.
+            BinomialEncodedDataSequence
 
         """
         xx = np.array(x)
@@ -589,5 +459,27 @@ class BinomialDataEncoder(DataSequenceEncoder):
         min_val = np.min(ux)
         max_val = np.max(ux)
 
-        return ux, ix, xx, min_val, max_val
+        return BinomialEncodedDataSequence(data=(ux, ix, xx, min_val, max_val))
+
+class BinomialEncodedDataSequence(EncodedDataSequence):
+    """BinomialEncodedDataSequence object.
+
+    Attributes:
+        data: (Tuple[np.ndarray, np.ndarray, np.ndarray, int, int]): Numpy array of values unique values,
+        inverse mapping, numpy array or original values, min val, max val.
+
+    """
+
+    def __init__(self, data: Tuple[np.ndarray, np.ndarray, np.ndarray, int, int]):
+        """BinomialEncodedDataSequence object.
+
+        Args:
+            data: (Tuple[np.ndarray, np.ndarray, np.ndarray, int, int]): Numpy array of values unique values,
+            inverse mapping, numpy array or original values, min val, max val.
+
+        """
+        super().__init__(data)
+
+    def __repr__(self) -> str:
+        return f'BinomialEncodedDataSequence(data={self.data})'
 

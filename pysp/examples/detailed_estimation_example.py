@@ -1,7 +1,7 @@
 """Detailed example of estimation and model validation with a test set."""
-import numpy as np
 import os
 os.environ['NUMBA_DISABLE_JIT'] = '1'
+import numpy as np
 from pysp.stats import *
 from pysp.utils.estimation import empirical_kl_divergence, partition_data
 
@@ -9,7 +9,7 @@ if __name__ == '__main__':
 
     rng = np.random.RandomState(1)
 
-    # Create some data
+    # Create distribution
     d10 = MixtureDistribution([GaussianDistribution(-3.0, 1.0), GaussianDistribution(0.0, 1.0)], [0.5, 0.5])
     d11 = OptionalDistribution(CategoricalDistribution({'a': 0.5, 'b': 0.4, 'c': 0.1}), p=0.1)
     d12 = MarkovChainDistribution({'a': 0.5, 'b': 0.5}, {'a': {'a': 0.2, 'b': 0.8}, 'b': {'a': 0.8, 'b': 0.2}},
@@ -30,9 +30,11 @@ if __name__ == '__main__':
 
     dist = MixtureDistribution([d1, d2], [0.5, 0.5])
 
+    # sample from the distribution
     sampler = dist.sampler(seed=rng.randint(2 ** 31))
     data = sampler.sample(size=2000)
 
+    # perform train test split
     train_data, valid_data = partition_data(data, [0.9, 0.1], rng)
 
     # Make the component estimator

@@ -4,10 +4,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="pysparkplug",
-    version="0.1.9.0",
+    version="2.0.0.0",
     description="A package for estimating heterogeneous probability density functions.",
-    author="Grant Boquet",
-    author_email="grant.boquet@gmail.com",
+    author="Adam Walder",
+    author_email="walder2@llnl.gov",
     url="N/A",
     packages=find_packages(),
     long_description="""\
@@ -19,7 +19,7 @@ setup(
         "Intended Audience :: Developers",
     ],
     keywords="machine learning density estimation statistics heterogeneous data",
-    license="MIT",
+    license="BSD",
     install_requires=[
         "scipy",
         "matplotlib",
@@ -27,8 +27,10 @@ setup(
         "numba",
         "mpmath",
         "pandas",
+        "bokeh",
         "pyspark",
         "tbb",
     ],
-
+    # ext_package='pysp',
+    # ext_modules=[Extension('c_ext', ['extensions/lda.c'])],
 )

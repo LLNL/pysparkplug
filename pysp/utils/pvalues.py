@@ -10,15 +10,6 @@ def binomial_rank(log_p_vec: Union[List[float], np.ndarray],
                   max_len: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray, Tuple[float, float, float]]:
     """Approximates the log-density histogram for a composite of binomials.
 
-    x, y, (LL0, DLL, cnt) =  binomial_rank(np.log([0.3, 0.2]), count_vec=[3, 2], max_len=10000)
-
-    # p_mat([1, 0, 0, 1, 1])
-    LL = np.log([0.3, 0.7, 0.7, 0.2, 0.2]).sum()
-    approx_rank = y[int((LL - LL0)/DLL):].sum() * np.power(2.0, cnt)
-
-
-        rtype(Tuple[np.ndarray, np.ndarray, Tuple[float, float, float]])
-
     Args:
         log_p_vec: Vector with log probabilities for each binomial distribution
         log_p1_vec: Optional vector with log one minus probabilities for each binomial distribution (for high-precision)

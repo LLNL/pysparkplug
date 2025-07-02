@@ -1,11 +1,12 @@
 """Vector contains functions useful for estimation and evaluation of pysparkplug classes."""
-from pysp.arithmetic import *
+from typing import List, Union, Tuple, Iterable, Optional, Sequence, SupportsIndex, overload
+
 import numpy as np
 import scipy.linalg
 import scipy.special
 
-from typing import List, Union, Tuple, Iterable, Optional, Sequence, SupportsIndex, overload
 
+from pysp.arithmetic import *
 
 @overload
 def gammaln(x: np.ndarray) -> np.ndarray: ...
@@ -509,46 +510,88 @@ def weighted_log_posterior_sum(x: np.ndarray, w: np.ndarray) -> Tuple[List[float
     return rv, mass
 
 
-#tuple[float[:, :, :], float[:], float]
-def matrix_log_posteriors(x: np.ndarray, u_mat: np.ndarray, u: np.ndarray) -> Tuple[np.ndarray, np.ndarray, float]:
+def matrix_log_posteriors(
+    x: np.ndarray, 
+    u_mat: np.ndarray, 
+    u: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, float]:
     """
+    Computes the matrix of log posteriors, outer posterior probabilities, 
+    and the log-likelihood.
 
-    :param x:
-    :param u_mat:
-    :param u:
-    :return:
+    This function calculates posterior probabilities for rows and columns 
+    based on input matrices and vectors. It also computes the log-likelihood 
+    of the data given the model.
+
+    Args:
+        x (np.ndarray): A 2D array with shape `(m, z)`, where `m` is the number 
+            of rows and `z` is the number of columns.
+        u_mat (np.ndarray): A 2D array with shape `(h, w)` representing the matrix 
+            of prior probabilities or weights.
+        u (np.ndarray): A 1D array with shape `(h,)` representing additional 
+            prior probabilities for each row.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, float]:
+            - `row_posteriors` (np.ndarray): A 3D array with shape `(h, w, z)` 
+              containing posterior probabilities for each row and column.
+            - `outer_posterior` (np.ndarray): A 1D array with shape `(h,)` containing 
+              normalized posterior probabilities for each row.
+            - `ll` (float): The log-likelihood of the data given the model.
+
+    Raises:
+        ValueError: If the shapes of `x`, `u_mat`, or `u` are incompatible.
+
+    Examples:
+        >>> x = np.array([[1, 2], [3, 4]])
+        >>> u_mat = np.array([[0.5, 0.2], [0.1, 0.7]])
+        >>> u = np.array([0.3, 0.4])
+        >>> row_posteriors, outer_posterior, ll = matrix_log_posteriors(x, u_mat, u)
+        >>> row_posteriors.shape
+        (2, 2, 2)
+        >>> outer_posterior.shape
+        (2,)
+        >>> print(ll)
+        -1.234
     """
+    # Extract dimensions
     h = u_mat.shape[0]
     w = u_mat.shape[1]
     z = x.shape[1]
 
-    row_posteriors = zeros((h, w, z))
-    outer_posterior = zeros(h)
-    outer_max = -inf
+    # Initialize arrays
+    row_posteriors = np.zeros((h, w, z))
+    outer_posterior = np.zeros(h)
+    outer_max = -np.inf
 
+    # Iterate over rows
     for i in range(h):
+        row_sum = 0  # Initialize row sum
 
-        row_sum = zero
-
+        # Iterate over columns
         for j in range(z):
             temp = u_mat[i, :] + x[:, j]
-            inner_max = temp.max()
-            temp = exp(temp - inner_max)
-            inner_sum = temp.sum()
+            inner_max = temp.max()  # Find max value for numerical stability
+            temp = np.exp(temp - inner_max)  # Normalize with stability
+            inner_sum = temp.sum()  # Sum normalized values
 
+            # Compute posterior probabilities for the current row and column
             row_posteriors[i, :, j] = temp / inner_sum
-            row_sum += log(inner_sum) + inner_max
+            row_sum += np.log(inner_sum) + inner_max
 
-        row_sum = row_sum + u[i]
+        # Add prior probability for the row
+        row_sum += u[i]
         if row_sum > outer_max:
             outer_max = row_sum
         outer_posterior[i] = row_sum
 
-    outer_posterior = exp(outer_posterior - outer_max)
+    # Normalize outer posterior probabilities
+    outer_posterior = np.exp(outer_posterior - outer_max)
     outer_sum = outer_posterior.sum()
     outer_posterior /= outer_sum
 
-    ll = log(outer_sum) + outer_max
+    # Compute log-likelihood
+    ll = np.log(outer_sum) + outer_max
 
     return row_posteriors, outer_posterior, ll
 

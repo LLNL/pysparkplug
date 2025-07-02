@@ -1,3 +1,4 @@
+"""Fitting a DPM with an automatic estimator determined from the data."""
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 

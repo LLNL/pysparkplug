@@ -10,24 +10,19 @@ from pysp.arithmetic import maxrandint
 from pysp.stats.null_dist import NullDistribution, NullAccumulatorFactory, NullEstimator, NullDataEncoder, \
     NullAccumulator
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
-    ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory
+    ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory, EncodedDataSequence
 
 D = Tuple[int, Optional[int]]
 T = TypeVar('T')  # Type for emissions
 SS0 = TypeVar('SS0')  # Type for suff stat of emissions
 SS1 = TypeVar('SS1')  # Type for suff-stat of length dist
 
-E1 = Tuple[int, np.ndarray, np.ndarray, np.ndarray]
-E2 = Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-E3 = TypeVar('E3')  # Encoded emissions
-E4 = TypeVar('E4')  # encoded lengths of children
-E5 = Tuple[np.ndarray, np.ndarray, np.ndarray]
-E6 = Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[np.ndarray], List[np.ndarray], List[np.ndarray],
+E = Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[np.ndarray], List[np.ndarray], List[np.ndarray],
            List[np.ndarray], np.ndarray]
-E01 = Tuple[np.ndarray, E1, E2, E3, Optional[Tuple[np.ndarray, E4]]]
-E02 = Tuple[int, np.ndarray, E5, E6, E3, Optional[Tuple[np.ndarray, E4]]]
-E = Tuple[Optional[E01], Optional[E02]]
-
+N3 = Tuple[np.ndarray, np.ndarray, np.ndarray]
+N7 = Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+E0 = Tuple[bool, Tuple[np.ndarray, N3, N7, EncodedDataSequence, Tuple[np.ndarray, EncodedDataSequence]]] # numba
+E1 = Tuple[bool, Tuple[int, np.ndarray, N3, E, EncodedDataSequence, Optional[Tuple[np.ndarray, EncodedDataSequence]]]]
 
 # def get_combos(u: Union[List[int], np.ndarray]) -> Tuple[List[int], List[int]]:
 #     """Get
@@ -65,6 +60,21 @@ def find_level(parents: np.ndarray) -> List[int]:
 
 
 class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution):
+    """TreeHiddenMarkovModelDistribution for specifying an HMM on a rooted tree.
+
+     Attributes:
+         topics (Sequence[SequenceEncodableProbabilityDistribution]): Emission distributions having type T.
+         num_states (int): Number of states in HMM.
+         w (np.ndarray): Initial state distribution. Sums to 1.
+         log_w (np.ndarray): Log of above.
+         transitions (np.ndarray): TPM with dimensions num_states by num_states.
+         log_transitions (np.ndarray): Log of TPM.
+         len_dist (SequenceEncodableProbabilityDistribution): Distribution for number of children for a node.
+             Defaults to NullDistribution.
+         terminal_level (int): Level in tree to terminate sampling.
+         use_numba (bool): If true Numba used for computations.
+
+     """
 
     def __init__(self, topics: Sequence[SequenceEncodableProbabilityDistribution],
                  w: Union[Sequence[float], np.ndarray],
@@ -73,7 +83,7 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
                  terminal_level: int = 10,
                  name: Optional[str] = None,
                  use_numba: bool = False) -> None:
-        """TreeHiddenMarkovModelDistribution for specifying an HMM on a rooted tree.
+        """TreeHiddenMarkovModelDistribution object.
 
         Args:
             topics (Sequence[SequenceEncodableProbabilityDistribution]): Emission distributions having type T.
@@ -85,18 +95,6 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
             terminal_level (int): Level of tree to terminate sampling. Default to 10.
             name (Optional[str]): Assign a name to object instance.
             use_numba (bool): If true Numba is used for vectorized calculations.
-
-        Attributes:
-            topics (Sequence[SequenceEncodableProbabilityDistribution]): Emission distributions having type T.
-            num_states (int): Number of states in HMM.
-            w (np.ndarray): Initial state distribution. Sums to 1.
-            log_w (np.ndarray): Log of above.
-            transitions (np.ndarray): TPM with dimensions num_states by num_states.
-            log_transitions (np.ndarray): Log of TPM.
-            len_dist (SequenceEncodableProbabilityDistribution): Distribution for number of children for a node.
-                Defaults to NullDistribution.
-            terminal_level (int): Level in tree to terminate sampling.
-            use_numba (bool): If true Numba used for computations.
 
         """
 
@@ -119,7 +117,7 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
     def __str__(self) -> str:
         s1 = ','.join(map(str, self.topics))
         s2 = repr(list(self.w))
-        s3 = repr([list(u) for u in self.transitions])
+        s3 = repr([u for u in self.transitions.tolist()])
         s4 = str(self.len_dist)
         s5 = repr(self.name)
         s6 = repr(self.use_numba)
@@ -134,10 +132,13 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
         enc_x = self.dist_to_encoder().seq_encode([x])
         return self.seq_log_density(enc_x)[0]
 
-    def seq_log_density(self, x: E) -> np.ndarray:
+    def seq_log_density(self, x: 'TreeHiddenMarkovEncodedDataSequence') -> np.ndarray:
 
-        if self.use_numba:
-            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc = x[0]
+        if not isinstance(x, TreeHiddenMarkovEncodedDataSequence):
+            raise Exception('Requires TreeHiddenMarkovEncodedDataSequence for `seq_` calls.')
+
+        if x.data[0]:
+            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc = x.data[1]
 
             num_states = self.num_states
             w = self.w
@@ -173,7 +174,7 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
 
         else:
 
-            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, _), enc_x, len_enc = x[1]
+            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, _), enc_x, len_enc = x.data[1]
 
             num_states = self.num_states
             max_level = len(level_idx)
@@ -240,10 +241,13 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
 
             return ll_ret
 
-    def seq_posterior(self, x: E) -> Optional[List[np.ndarray]]:
+    def seq_posterior(self, x: 'TreeHiddenMarkovEncodedDataSequence') -> List[np.ndarray]:
 
-        if self.use_numba:
-            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, _ = x[0]
+        if not isinstance(x, TreeHiddenMarkovEncodedDataSequence):
+            raise Exception('Requires TreeHiddenMarkovEncodedDataSequence for `seq_` calls.')
+
+        if x.data[0]:
+            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, _ = x.data[1]
 
             num_states = self.num_states
             w = self.w
@@ -273,7 +277,7 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
             return [betas[tz[i]:tz[i + 1], :] for i in range(len(tz) - 1)]
 
         else:
-            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, _), enc_x, len_enc = x[1]
+            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, _), enc_x, len_enc = x.data[1]
 
             num_states = self.num_states
             max_level = len(level_idx)
@@ -334,9 +338,13 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
         enc_x = self.dist_to_encoder().seq_encode([x])
         return self.seq_viterbi(enc_x)[0]
 
-    def seq_viterbi(self, x: E) -> List[np.ndarray]:
-        if self.use_numba:
-            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, _ = x[0]
+    def seq_viterbi(self, x: 'TreeHiddenMarkovEncodedDataSequence') -> List[np.ndarray]:
+
+        if not isinstance(x, TreeHiddenMarkovEncodedDataSequence):
+            raise Exception('Requires TreeHiddenMarkovEncodedDataSequence for `seq_` calls.')
+
+        if x.data[0]:
+            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, _ = x.data[1:]
 
             num_states = self.num_states
             log_w = self.log_w
@@ -358,7 +366,7 @@ class TreeHiddenMarkovModelDistribution(SequenceEncodableProbabilityDistribution
             return [out[tz[i]:tz[i + 1]] for i in range(len(tz) - 1)]
 
         else:
-            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, _ = x[1]
+            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, _ = x.data[1:]
 
             num_states = self.num_states
             max_level = len(level_idx)
@@ -523,17 +531,17 @@ class TreeHiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
         if not self._init_rng:
             self._rng_initialize(rng)
 
-        enc_x = self.accumulators[0].acc_to_encoder().seq_encode([x])
+        enc_x = self.acc_to_encoder().seq_encode([x])
         self.seq_initialize(enc_x, weights=np.asarray([weight]), rng=rng)
 
-    def seq_initialize(self, x: E, weights: np.ndarray, rng: np.random.RandomState) -> None:
+    def seq_initialize(self, x: 'TreeHiddenMarkovEncodedDataSequence', weights: np.ndarray, rng: np.random.RandomState) -> None:
 
         if not self._init_rng:
             self._rng_initialize(rng)
 
-        if self.use_numba:
+        if x.data[0]:
 
-            tz, _, (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc = x[0]
+            tz, _, (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc = x.data[1]
 
             states = self._idx_rng.choice(self.num_states, replace=True, size=tz[-1])
 
@@ -553,7 +561,7 @@ class TreeHiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
                 self.len_accumulator.seq_initialize(len_enc[1], weights[len_enc[0]], self._len_rng)
 
         else:
-            cnt, tz, _, (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, len_enc = x[1]
+            cnt, tz, _, (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, len_enc = x.data[1]
 
             num_states = self.num_states
             states = self._idx_rng.choice(self.num_states, replace=True, size=cnt)
@@ -591,10 +599,10 @@ class TreeHiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
             if len_enc is not None:
                 self.len_accumulator.seq_initialize(len_enc[1], weights[len_enc[0]], self._len_rng)
 
-    def seq_update(self, x: E, weights: np.ndarray, estimate: TreeHiddenMarkovModelDistribution) -> None:
+    def seq_update(self, x: 'TreeHiddenMarkovEncodedDataSequence', weights: np.ndarray, estimate: TreeHiddenMarkovModelDistribution) -> None:
 
-        if self.use_numba:
-            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc = x[0]
+        if x.data[0]:
+            tz, (max_level, xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc = x.data[1]
 
             tot_cnt = tz[-1]
             num_states = estimate.num_states
@@ -637,7 +645,7 @@ class TreeHiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
 
         else:
             ## numpy calculation from encoding
-            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, len_enc = x[1]
+            cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, len_enc = x.data[1]
 
             num_states = estimate.num_states
             max_level = len(level_idx)
@@ -924,7 +932,7 @@ class TreeHiddenMarkovDataEncoder(DataSequenceEncoder):
         else:
             return False
 
-    def _seq_encode(self, x: Sequence[Sequence[Tuple[D, T]]]) -> Tuple[int, np.ndarray, E5, E6, Any, Optional[Any]]:
+    def _seq_encode(self, x: Sequence[Sequence[Tuple[D, T]]]) -> E1:
 
         xs = []  # flattened values of nodes in order encoded
         obs_idx = [] #  tree seq idx for observed flattened nodes
@@ -1024,16 +1032,11 @@ class TreeHiddenMarkovDataEncoder(DataSequenceEncoder):
         obs_idx = np.asarray(obs_idx, dtype=np.int32)
 
         if len_enc is not None:
-            return cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, \
-                   (obs_idx, len_enc)
+            return False, (cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, (obs_idx, len_enc))
         else:
-            return cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, None
+            return False, (cnt, tz, (xln, xlnl, xlni), (idx, xbi, xp, xc, level_idx, p_nxt, eta_p, i_nxt, rns), enc_x, None)
 
-    def seq_encode(self, x: Sequence[Sequence[Tuple[D, T]]]) -> Tuple[Optional[Tuple[np.ndarray, E1, E2, Any,
-                                                                      Optional[Tuple[np.ndarray, Any]]]],
-                                                                      Optional[Tuple[int, np.ndarray, E5, E6, Any,
-                                                                                     Optional[Tuple[np.ndarray,
-                                                                                                    Any]]]]]:
+    def seq_encode(self, x: Sequence[Sequence[Tuple[D, T]]]) -> 'TreeHiddenMarkovEncodedDataSequence':
         if self.use_numba:
             xs = []  # flattened values of nodes in order encoded
             idx = []  # idx corresponding to weight
@@ -1127,10 +1130,21 @@ class TreeHiddenMarkovDataEncoder(DataSequenceEncoder):
             #if len_enc is not None:
             len_enc = tuple([np.asarray(idx, np.int32), len_enc])
 
-            return (tz, (np.max(xln), xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc), None
+            rv_enc = (tz, (np.max(xln), xln, xlnl, tlnz), (xbi, xp, xc, xl, txz, tp, tpz), enc_x, len_enc)
+
+            return TreeHiddenMarkovEncodedDataSequence(data=(True, rv_enc))
 
         else:
-            return None, self._seq_encode(x)
+            return TreeHiddenMarkovEncodedDataSequence(data=self._seq_encode(x))
+
+
+class TreeHiddenMarkovEncodedDataSequence(EncodedDataSequence):
+
+    def __init__(self, data: Union[E0, E1]):
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'TreeHiddenMarkovEncodedDataSequence(data=f{self.data})'
 
 @numba.njit(
     'void(int32, int32[:], int32[:], int32[:], int32[:], int32[:], int32[:], int32[:], int32[:], int32[:], int32[:], '

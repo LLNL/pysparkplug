@@ -1,32 +1,43 @@
-pysparkplug is a Python package for distributed heterogeneous density estimation. With only a few lines of code you can specify and fit complex models on variable-length heterogenous data.
+pysparkplug - A package for distributed heterogeneous density estimation. With only a few lines of code you can specify and fit complex models on variable-length heterogenous data.
+
+--------------------------------------------------------------------------------
+
+## Installation
+
+User installation with pip
+```
+> pip install --user /path/to/package
+```
 
 
-To install pysparkplug with make sure you have Python 3.7+ then run
+## Building an egg (for distributed estimation)
 
-    $ git clone https://github.com/LLNL/pysparkplug.git
-    $ pip ./pysparkplug
+To make an egg, go to the project folder (where this README is located) and execute:
+
+> python setup.py bdist_egg
 
 
-Examples
-----------------
+
+## Examples
 
 Examples that run locally are located in ./pysp/examples/
 
-
-    $ python pysp/examples/mixture_example.py
+```
+> PYTHONPATH=/path/to/package/ python ./pysp/examples/mixture_example.py
+```
 
 
 Examples that run with Apache Spark are located in./pysp/examples_spark/
 
-
-    $ /path/to/spark/bin/spark-submit --master local[*] --py-files /path/to/package/dist/pysparkplug-0.1.8.4-py3.7.egg ./pysp/examples_spark/mixture_example.py 
-
-
-
-License
-----------------
-
-pysparkplug is distributed under the terms of the MIT license.
+```
+/path/to/spark/bin/spark-submit --master local[*] --py-files /path/to/package/dist/pysparkplug-0.1.8.4-py3.7.egg ./pysp/examples_spark/mixture_example.py 
+```
 
 
-LLNL-CODE-844837
+## Tutorial notebooks
+
+The package comes with many Jupiter notebooks
+
+ * ./notebooks/distributions_and_combinators.ipynb (a good starting point)
+ * ./notebooks/graphical_models.ipynb (introduction to graphical models)
+ * ./notebooks/estimation_using_spark.ipynb (example notebooks using Apache Spark for distributed estimation)

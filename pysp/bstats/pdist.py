@@ -1,5 +1,6 @@
-from typing import Generic, TypeVar, Optional, Iterable, Any, List
-
+from typing import Generic, TypeVar, Optional, Any
+from collections.abc import Iterable
+from abc import abstractmethod
 from pysp.arithmetic import exp, one
 import numpy as np
 import pandas as pd
@@ -140,3 +141,54 @@ class DataFrameEncodableAccumulator(StatisticAccumulator):
 	def df_update(self, df, weights, estimate):
 		for v,w in zip(df[self.name], weights):
 			self.update(v,w,estimate)
+
+
+class DataSequenceEncoder:
+
+    def __str__(self) -> str:
+        return self.__str__()
+
+    @abstractmethod
+    def seq_encode(self, x: Any) -> 'EncodedDataSequence':
+        """Create EncodedDataSequence from iid observations from SequenceEncodedProbabilityDistribution.
+
+        Args:
+            x (Any): Sequence of observations from corresponding distribution.
+
+        Returns:
+            EncodedDataSequence
+
+        """
+        ...
+
+    @abstractmethod
+    def __eq__(self, other: object) -> bool: 
+        """Check if object is an instance of DataSequenceEncoder.
+
+        Used to avoid repeated sequence encodings when appropriate.
+
+        Args:
+            other (object): Object to compare.
+
+        Returns:
+            True if object is an instance of ExponentialDataEncoder, else False.
+
+        """
+        ...
+class EncodedDataSequence(object):
+    """EncodedDatSequence is the outputed data structure from
+    DataSeqeunceEncoder. Object is used for vectorized functions and type
+    checks.
+    """
+
+    def __init__(self, data: Any) -> None:
+        self.data = data
+
+    @abstractmethod
+    def __repr__(self) -> str: ...
+
+
+
+
+
+

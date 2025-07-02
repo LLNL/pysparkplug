@@ -18,7 +18,8 @@ sampling X_2 from g_j() (data type T1) given X_1 was sampled from f_i().
 from pysp.arithmetic import *
 from numpy.random import RandomState
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, StatisticAccumulatorFactory, \
-    SequenceEncodableStatisticAccumulator, DataSequenceEncoder, DistributionSampler, ParameterEstimator
+    SequenceEncodableStatisticAccumulator, DataSequenceEncoder, DistributionSampler, ParameterEstimator, \
+    EncodedDataSequence
 import numpy as np
 import pysp.utils.vector as vec
 from pysp.arithmetic import maxrandint
@@ -34,6 +35,34 @@ SS1 = TypeVar('SS1')
 
 
 class JointMixtureDistribution(SequenceEncodableProbabilityDistribution):
+    """JointMixtureDistribution object for defining a joint mixture distribution.
+
+    Notes:
+        Data type is Tuple[T0, T1] where all components1 entries and component2 entries are compatible with
+        T0 and T1 respectively.
+
+    Attributes:
+        components1(Sequence[SequenceEncodableProbabilityDistribution]): Mixture components for mixture of X1.
+        components2 (Sequence[SequenceEncodableProbabilityDistribution]): Mixture components for mixture X2.
+        w1 (np.ndarray): Probability of drawing X1 from component i.
+        w2 (np.ndarray): Probability of drawing X2 from component j.
+        num_components1 (int): Number of mixture components for X1.
+        num_components2 (int): Number of mixture components for X2.
+        taus12 (np.ndarray): 2-d Numpy array with probabilities of drawing X2 from comp j given X1 was drawn from
+            comp i. Rows are component X1 state.
+        taus21 (np.ndarray): 2-d Numpy array with probabilities of drawing X1 from comp i given X2 was drawn from
+            comp j. Rows are component X1 state.
+        log_w1 (np.ndarray): Log-probability of drawing X1 from component i.
+        log_w2 (np.ndarray): Log-probability of drawing X2 from component j.
+        log_taus12 (np.ndarray): 2-d Numpy array with log-probabilities of drawing X2 from comp j given X1 was
+            drawn from comp i. Rows are component X1 state.
+        log_taus21 (np.ndarray): 2-d Numpy array with log-probabilities of drawing X1 from comp i given X2 was
+            drawn from comp j. Rows are component X1 state.
+        keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
+            components of X1, mixture components of X2.
+        name (Optional[str]): Set name to object.
+
+    """
 
     def __init__(self, components1: Sequence[SequenceEncodableProbabilityDistribution],
                  components2: Sequence[SequenceEncodableProbabilityDistribution],
@@ -43,10 +72,7 @@ class JointMixtureDistribution(SequenceEncodableProbabilityDistribution):
                  taus21: Union[List[List[float]], np.ndarray],
                  keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
                  name: Optional[str] = None) -> None:
-        """JointMixtureDistribution object for defining a joint mixture distribution.
-
-        Note: Data type is Tuple[T0, T1] where all components1 entries and component2 entries are compatible with
-        T0 and T1 respectively.
+        """JointMixtureDistribution object.
 
         Args:
             components1(Sequence[SequenceEncodableProbabilityDistribution]): Mixture components for mixture of X1.
@@ -57,27 +83,6 @@ class JointMixtureDistribution(SequenceEncodableProbabilityDistribution):
                 comp i. Rows are component X1 state.
             taus21 (np.ndarray): 2-d Numpy array with probabilities of drawing X1 from comp i given X2 was drawn from
                 comp j. Rows are component X1 state.
-            keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
-                components of X1, mixture components of X2.
-            name (Optional[str]): Set name to object.
-
-        Attributes:
-            components1(Sequence[SequenceEncodableProbabilityDistribution]): Mixture components for mixture of X1.
-            components2 (Sequence[SequenceEncodableProbabilityDistribution]): Mixture components for mixture X2.
-            w1 (np.ndarray): Probability of drawing X1 from component i.
-            w2 (np.ndarray): Probability of drawing X2 from component j.
-            num_components1 (int): Number of mixture components for X1.
-            num_components2 (int): Number of mixture components for X2.
-            taus12 (np.ndarray): 2-d Numpy array with probabilities of drawing X2 from comp j given X1 was drawn from
-                comp i. Rows are component X1 state.
-            taus21 (np.ndarray): 2-d Numpy array with probabilities of drawing X1 from comp i given X2 was drawn from
-                comp j. Rows are component X1 state.
-            log_w1 (np.ndarray): Log-probability of drawing X1 from component i.
-            log_w2 (np.ndarray): Log-probability of drawing X2 from component j.
-            log_taus12 (np.ndarray): 2-d Numpy array with log-probabilities of drawing X2 from comp j given X1 was
-                drawn from comp i. Rows are component X1 state.
-            log_taus21 (np.ndarray): 2-d Numpy array with log-probabilities of drawing X1 from comp i given X2 was
-                drawn from comp j. Rows are component X1 state.
             keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
                 components of X1, mixture components of X2.
             name (Optional[str]): Set name to object.
@@ -107,8 +112,9 @@ class JointMixtureDistribution(SequenceEncodableProbabilityDistribution):
         s5 = ','.join(map(str, self.taus12.flatten()))
         s6 = ','.join(map(str, self.taus21.flatten()))
         s7 = repr(self.name)
+        s8 = repr(self.keys)
 
-        return 'JointMixtureDistribution([%s], [%s], [%s], [%s], [%s], [%s], name=%s)' % (s1, s2, s3, s4, s5, s6, s7)
+        return 'JointMixtureDistribution([%s], [%s], [%s], [%s], [%s], [%s], name=%s, keys=%s)' % (s1, s2, s3, s4, s5, s6, s7, s8)
 
     def density(self, x: Tuple[T0, T1]) -> float:
         return exp(self.log_density(x))
@@ -137,8 +143,12 @@ class JointMixtureDistribution(SequenceEncodableProbabilityDistribution):
 
         return rv
 
-    def seq_log_density(self, x: Tuple[int, E0, E1]) -> np.ndarray:
-        sz, enc_data1, enc_data2 = x
+    def seq_log_density(self, x: 'JointMixtureEncodedDataSequence') -> np.ndarray:
+
+        if not isinstance(x, JointMixtureEncodedDataSequence):
+            raise Exception("JointMixtureEncodedDataSequence required for seq_log_density().")
+
+        sz, enc_data1, enc_data2 = x.data
         ll_mat1 = np.zeros((sz, self.num_components1))
         ll_mat2 = np.zeros((sz, self.num_components2))
 
@@ -181,7 +191,26 @@ class JointMixtureDistribution(SequenceEncodableProbabilityDistribution):
 
 
 class JointMixtureSampler(DistributionSampler):
+    """JointMixtureSampler object for sampling from a joint mixture distribution.
+
+    Attributes:
+        rng (RandomState): RandomState for seeding samples.
+        dist (JointMixtureDistribution): Distribution to sample from.
+        comp_sampler1 (DistributionSampler): Inner-mixture sampler.
+        comp_sampler2 (DistributionSampler): Outer-mixture sampler.
+
+
+    """
+
     def __init__(self, dist: JointMixtureDistribution, seed: Optional[int] = None) -> None:
+        """JointMixtureSampler object.
+
+        Args:
+            dist (JointMixtureDistribution): Distribution to sample from.
+            seed (Optional[int]): Set seed for sampling.
+
+
+        """
         self.rng = RandomState(seed)
         self.dist = dist
         self.comp_sampler1 = [d.sampler(seed=self.rng.randint(0, maxrandint)) for d in self.dist.components1]
@@ -202,12 +231,39 @@ class JointMixtureSampler(DistributionSampler):
 
 
 class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
+    """JointMixtureEstimatorAccumulator object for aggregating sufficient statistics.
+
+    Attributes:
+        accumulators1 (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the mixture components
+            of X1.
+        accumulators2 (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the mixture components
+            of X2.
+        keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
+            components of X1, mixture components of X2.
+        num_components1 (int): Number of X1 mixture components.
+        num_components2 (int): Number of X2 mixture components.
+        comp_counts1 (np.ndarray): Weighted observation counts for states of mixture on X1.
+        comp_counts2 (np.ndarray): Weighted observation counts for states of mixture on X2.
+        joint_counts (np.ndarray): 2-d Numpy array for counts of state-given-state weights. Row indexed by states
+            of X1, cols indexed by states of X2.
+        name (Optional[str]): Set name to object.
+
+        _rng_init (bool): Set to True once _rng_ members have been set.
+        _idx1_rng (Optional[RandomState]): RandomState for generating states for X1 in initializer.
+        _idx2_rng (Optional[RandomState]): RandomState for generating states for X2 in initializer.
+        _acc1_rng (Optional[List[RandomState]]): List of RandomStates for initializing each accumulator for
+            mixture components of X1.
+        _acc2_rng (Optional[List[RandomState]]): List of RandomStates for initializing each accumulator for
+            mixture components of X2.
+
+
+    """
 
     def __init__(self, accumulators1: Sequence[SequenceEncodableStatisticAccumulator],
                  accumulators2: Sequence[SequenceEncodableStatisticAccumulator],
                  keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
                  name: Optional[str] = None) -> None:
-        """
+        """JointMixtureEstimatorAccumulator object.
 
         Args:
             accumulators1 (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the mixture components
@@ -217,30 +273,6 @@ class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
             keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
                 components of X1, mixture components of X2.
             name (Optional[str]): Set name to object.
-
-        Attributes:
-            accumulators1 (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the mixture components
-                of X1.
-            accumulators2 (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the mixture components
-                of X2.
-            keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
-                components of X1, mixture components of X2.
-            num_components1 (int): Number of X1 mixture components.
-            num_components2 (int): Number of X2 mixture components.
-            comp_counts1 (np.ndarray): Weighted observation counts for states of mixture on X1.
-            comp_counts2 (np.ndarray): Weighted observation counts for states of mixture on X2.
-            joint_counts (np.ndarray): 2-d Numpy array for counts of state-given-state weights. Row indexed by states
-                of X1, cols indexed by states of X2.
-            name (Optional[str]): Set name to object.
-
-            _rng_init (bool): Set to True once _rng_ members have been set.
-            _idx1_rng (Optional[RandomState]): RandomState for generating states for X1 in initializer.
-            _idx2_rng (Optional[RandomState]): RandomState for generating states for X2 in initializer.
-            _acc1_rng (Optional[List[RandomState]]): List of RandomStates for initializing each accumulator for
-                mixture components of X1.
-            _acc2_rng (Optional[List[RandomState]]): List of RandomStates for initializing each accumulator for
-                mixture components of X2.
-
 
         """
         self.accumulators1 = accumulators1
@@ -274,8 +306,11 @@ class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
         if not self._rng_init:
             self._rng_initialize(rng)
 
-        idx1 = self._idx1_rng.choice(self.num_components1)
-        idx2 = self._idx2_rng.choice(self.num_components2)
+        # idx1 = self._idx1_rng.choice(self.num_components1)
+        # idx2 = self._idx2_rng.choice(self.num_components2)
+
+        idx = self._idx1_rng.choice(self.num_components1 * self.num_components2)
+        idx1, idx2 = idx // self.num_components1, idx % idx2
 
         self.joint_counts[idx1, idx2] += 1.0
 
@@ -288,16 +323,19 @@ class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
             self.accumulators2[i].initialize(x[1], w, self._acc2_rng[i])
             self.comp_counts2[i] += w
 
-    def seq_initialize(self, x: Tuple[int, E0, E1], weights, rng) -> None:
-        sz, enc1, enc2 = x
+    def seq_initialize(self, x: 'JointMixtureEncodedDataSequence', weights, rng) -> None:
+        sz, enc1, enc2 = x.data
 
         if not self._rng_init:
             self._rng_initialize(rng)
 
-        idx1 = self._idx1_rng.choice(self.num_components1, size=sz)
-        idx2 = self._idx2_rng.choice(self.num_components2, size=sz)
-
-        temp = np.bincount(idx1*self.num_components1 + idx2, minlength=self.num_components1*self.num_components2)
+        # idx1 = self._idx1_rng.choice(self.num_components1, size=sz)
+        # idx2 = self._idx2_rng.choice(self.num_components2, size=sz)
+        # temp = np.bincount(idx1*self.num_components1 + idx2, minlength=self.num_components1*self.num_components2)
+        
+        idx = self._idx1_rng.choice(self.num_components1 * self.num_components2, size=sz)
+        temp = np.bincount(idx, minlength=self.num_components1*self.num_components2)
+        idx1, idx2 = idx // self.num_components1, idx % self.num_components1
         self.joint_counts += np.reshape(temp, (self.num_components1, self.num_components2))
 
         for i in range(self.num_components1):
@@ -312,8 +350,8 @@ class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
             self.accumulators2[i].seq_initialize(enc2, w, self._acc2_rng[i])
             self.comp_counts2[i] += np.sum(w)
 
-    def seq_update(self, x: Tuple[int, E0, E1], weights: np.ndarray, estimate: JointMixtureDistribution) -> None:
-        sz, enc_data1, enc_data2 = x
+    def seq_update(self, x: 'JointMixtureEncodedDataSequence', weights: np.ndarray, estimate: JointMixtureDistribution) -> None:
+        sz, enc_data1, enc_data2 = x.data
         ll_mat1 = np.zeros((sz, self.num_components1, 1))
         ll_mat2 = np.zeros((sz, 1, self.num_components2))
         log_w = estimate.log_w1
@@ -395,21 +433,21 @@ class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
         weight_key, acc1_key, acc2_key = self.keys
 
         if weight_key is not None:
-            if weight_key in stats_dict[weight_key]:
+            if weight_key in stats_dict:
                 x1, x2, x3 = stats_dict[weight_key]
                 self.comp_counts1 += x1
                 self.comp_counts2 += x2
                 self.joint_counts += x3
 
         if acc1_key is not None:
-            if acc1_key in stats_dict[acc1_key]:
+            if acc1_key in stats_dict:
                 for i, u in enumerate(stats_dict[acc1_key]):
                     self.accumulators1[i].combine(u)
             else:
                 stats_dict[acc1_key] = tuple([acc.value() for acc in self.accumulators1])
 
         if acc2_key is not None:
-            if acc2_key in stats_dict[acc2_key]:
+            if acc2_key in stats_dict:
                 for i, u in enumerate(stats_dict[acc2_key]):
                     self.accumulators2[i].combine(u)
             else:
@@ -417,21 +455,20 @@ class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
 
     def key_replace(self, stats_dict: Dict[str, Any]) -> None:
         weight_key, acc1_key, acc2_key = self.keys
-
         if weight_key is not None:
-            if weight_key in stats_dict[weight_key]:
+            if weight_key in stats_dict:
                 x1, x2, x3 = stats_dict[weight_key]
                 self.comp_counts1 = x1
                 self.comp_counts2 = x2
                 self.joint_counts = x3
 
         if acc1_key is not None:
-            if acc1_key in stats_dict[acc1_key]:
+            if acc1_key in stats_dict:
                 for i, u in enumerate(stats_dict[acc1_key]):
                     self.accumulators1[i].from_value(u)
 
         if acc2_key is not None:
-            if acc2_key in stats_dict[acc2_key]:
+            if acc2_key in stats_dict:
                 for i, u in enumerate(stats_dict[acc2_key]):
                     self.accumulators2[i].from_value(u)
 
@@ -442,20 +479,24 @@ class JointMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
 
 
 class JointMixtureEstimatorAccumulatorFactory(StatisticAccumulatorFactory):
+    """JointMixtureEstimatorAccumulatorFactory object for creating JointMixtureEstimatorAccumulator objects.
+
+    Attributes:
+        factories1 (Sequence[StatisticAccumulatorFactory]): List of mixture component factories for X1.
+        factories2 (Sequence[StatisticAccumulatorFactory]): List of mixture component factories for X2.
+        keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
+            components of X1, mixture components of X2.
+        name (Optional[str]): Set name to object.
+
+    """
+
     def __init__(self, factories1: Sequence[StatisticAccumulatorFactory],
                  factories2: Sequence[StatisticAccumulatorFactory],
                  keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
                  name: Optional[str] = None) -> None:
-        """JointMixtureEstimatorAccumulatorFactory object for creating JointMixtureEstimatorAccumulator objects.
+        """JointMixtureEstimatorAccumulatorFactory object.
 
         Args:
-            factories1 (Sequence[StatisticAccumulatorFactory]): List of mixture component factories for X1.
-            factories2 (Sequence[StatisticAccumulatorFactory]): List of mixture component factories for X2.
-            keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
-                components of X1, mixture components of X2.
-            name (Optional[str]): Set name to object.
-
-        Attributes:
             factories1 (Sequence[StatisticAccumulatorFactory]): List of mixture component factories for X1.
             factories2 (Sequence[StatisticAccumulatorFactory]): List of mixture component factories for X2.
             keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
@@ -471,28 +512,31 @@ class JointMixtureEstimatorAccumulatorFactory(StatisticAccumulatorFactory):
     def make(self) -> 'JointMixtureEstimatorAccumulator':
         f1 = [self.factories1[i].make() for i in range(len(self.factories1))]
         f2 = [self.factories2[i].make() for i in range(len(self.factories2))]
-        return JointMixtureEstimatorAccumulator(f1, f2, keys=self.keys)
+        return JointMixtureEstimatorAccumulator(f1, f2, name=self.name, keys=self.keys)
 
 
 class JointMixtureEstimator(ParameterEstimator):
+    """JointMixtureEstimator object for estimating joint mixture distribution from aggregated sufficient stats.
+
+    Attributes:
+        estimators1 (Sequence[ParameterEstimator]): Estimators for mixture component of X1.
+        estimators2 (Sequence[ParameterEstimator]): Estimators for mixture component of X2.
+        suff_stat:
+        pseudo_count (Optional[Tuple[float, float, float]]): Used to re-weight the state counts in estimation.
+        keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
+            components of X1, mixture components of X2.
+        name (Optional[str]): Set name to object.
+
+    """
 
     def __init__(self, estimators1: Sequence[ParameterEstimator], estimators2: Sequence[ParameterEstimator],
                  suff_stat: Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, Tuple[E0, ...], Tuple[E1, ...]]] = None,
                  pseudo_count: Optional[Tuple[float, float, float]] = None,
                  keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
                  name: Optional[str] = None)  -> None:
-        """JointMixtureEstimator object for estimating joint mixture distribution from aggregated sufficient stats.
+        """JointMixtureEstimator object.
 
         Args:
-            estimators1 (Sequence[ParameterEstimator]): Estimators for mixture component of X1.
-            estimators2 (Sequence[ParameterEstimator]): Estimators for mixture component of X2.
-            suff_stat:
-            pseudo_count (Optional[Tuple[float, float, float]]): Used to re-weight the state counts in estimation.
-            keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for weights, mixture
-                components of X1, mixture components of X2.
-            name (Optional[str]): Set name to object.
-
-        Attributes:
             estimators1 (Sequence[ParameterEstimator]): Estimators for mixture component of X1.
             estimators2 (Sequence[ParameterEstimator]): Estimators for mixture component of X2.
             suff_stat:
@@ -514,26 +558,10 @@ class JointMixtureEstimator(ParameterEstimator):
     def accumulator_factory(self) -> 'JointMixtureEstimatorAccumulatorFactory':
         est_factories1 = [u.accumulator_factory() for u in self.estimators1]
         est_factories2 = [u.accumulator_factory() for u in self.estimators2]
-        return JointMixtureEstimatorAccumulatorFactory(est_factories1, est_factories2, self.keys)
+        return JointMixtureEstimatorAccumulatorFactory(est_factories1, est_factories2, name=self.name, keys=self.keys)
 
     def estimate(self, nobs, suff_stat: Tuple[np.ndarray, np.ndarray, np.ndarray, Tuple[E0, ...], Tuple[E1, ...]]) \
             -> 'JointMixtureDistribution':
-        """Estimate a Joint mixture distribution from aggregated sufficient statistics.
-
-        suff_stat is a Tuple containing:
-            suff_stat[0] (np.ndarray): Component counts for outer mixture.
-            suff_stat[1] (np.ndarray): Component counts for the inner mixture.
-            suff_stat[2] (np.ndarray): Component counts for the comps of inner mix given an outer mix component.
-            suff_stat[3] (Tuple[E0,...]): Suff-stats for outer comps
-            suff_stat[4] (Tuple[E1,...]): Suff-stats for the inner comps.
-
-        Args:
-            nobs (Optional[float]): Weighted number of observations used in aggregation of suff_stats.
-            suff_stat: See above for details.
-
-        Returns:
-
-        """
         num_components1 = self.num_components1
         num_components2 = self.num_components2
         counts1, counts2, joint_counts, comp_suff_stats1, comp_suff_stats2 = suff_stat
@@ -575,15 +603,18 @@ class JointMixtureEstimator(ParameterEstimator):
 
 
 class JointMixtureDataEncoder(DataSequenceEncoder):
+    """JointMixtureDataEncoder object for encoding sequences of iid joint mixture observations.
+
+    Attributes:
+        encoder1 (DataSequenceEncoder): DataSequenceEncoder for the components of X1.
+        encoder2 (DataSequenceEncoder): DataSequenceEncoder for the components of X2.
+
+    """
 
     def __init__(self, encoder1: DataSequenceEncoder, encoder2: DataSequenceEncoder) -> None:
-        """JointMixtureDataEncoder object for encoding sequences of iid joint mixture observations.
+        """JointMixtureDataEncoder object.
 
         Args:
-            encoder1 (DataSequenceEncoder): DataSequenceEncoder for the components of X1.
-            encoder2 (DataSequenceEncoder): DataSequenceEncoder for the components of X2.
-
-        Attributes:
             encoder1 (DataSequenceEncoder): DataSequenceEncoder for the components of X1.
             encoder2 (DataSequenceEncoder): DataSequenceEncoder for the components of X2.
 
@@ -600,9 +631,19 @@ class JointMixtureDataEncoder(DataSequenceEncoder):
         else:
             return False
 
-    def seq_encode(self, x: Sequence[Tuple[T0, T1]]) -> Tuple[int, Any, Any]:
+    def seq_encode(self, x: Sequence[Tuple[T0, T1]]) -> 'JointMixtureEncodedDataSequence':
         rv0 = len(x)
         rv1 = self.encoder1.seq_encode([u[0] for u in x])
         rv2 = self.encoder2.seq_encode([u[1] for u in x])
 
-        return rv0, rv1, rv2
+        return JointMixtureEncodedDataSequence(data=(rv0, rv1, rv2))
+
+class JointMixtureEncodedDataSequence(EncodedDataSequence):
+
+    def __init__(self, data: Tuple[int, EncodedDataSequence, EncodedDataSequence]):
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'JointMixtureEncodedDataSequence(data={self.data})'
+
+
