@@ -10,34 +10,40 @@ User installation with pip
 ```
 
 
-## Building an egg (for distributed estimation)
-
-To make an egg, go to the project folder (where this README is located) and execute:
-
-> python setup.py bdist_egg
-
-
-
-## Examples
-
-Examples that run locally are located in ./pysp/examples/
+## Building with mpi4py and umap-learn
 
 ```
-> PYTHONPATH=/path/to/package/ python ./pysp/examples/mixture_example.py
+> cd /path/to/package
+> pip install --user .[optional]
 ```
 
+## Stats Examples
+Examples using `stats` distributions that run locally are located in ./pysp/examples/
 
+```
+> PYTHONPATH=/path/to/package/ python ./pysp/examples/stats_examples/mixture_example.py
+```
+
+## Running with Spark
 Examples that run with Apache Spark are located in./pysp/examples_spark/
 
+First build a wheel
 ```
-/path/to/spark/bin/spark-submit --master local[*] --py-files /path/to/package/dist/pysparkplug-0.1.8.4-py3.7.egg ./pysp/examples_spark/mixture_example.py 
+> cd /path/to/pysparkplug
+> pip install setuptools wheel
+> python setup.py bdist_wheel
 ```
 
+Run the example with below
+```
+> /path/to/spark/bin/spark-submit --master local[*] --py-files /path/to/package/dist/pysparkplug-0.1.8.4-py3-none-any.whl ./pysp/examples_spark/mixture_example.py
+```
 
-## Tutorial notebooks
+## Running with MPI4PY
+Examples that run with mpi4py are located in ./pysp/mpi4py/examples/
 
-The package comes with many Jupiter notebooks
-
- * ./notebooks/distributions_and_combinators.ipynb (a good starting point)
- * ./notebooks/graphical_models.ipynb (introduction to graphical models)
- * ./notebooks/estimation_using_spark.ipynb (example notebooks using Apache Spark for distributed estimation)
+Below will run the example ./pysp/mpi4py/examples/estimation_example.py with 4 cores.
+```
+> PYTHONPATH=/path/to/pysparkplug
+> mpiexec -n 4 python /path/to/package/pysp/mpi4py/examples/estimation_example.py
+```
