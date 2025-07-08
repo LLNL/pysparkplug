@@ -1,18 +1,12 @@
-#!/usr/bin/env python
-
-from setuptools import setup, find_packages
+from setuptools import setup, Extension, find_packages
 
 setup(
     name="pysparkplug",
-    version="2.0.0.0",
+    version="1.1.0",
     description="A package for estimating heterogeneous probability density functions.",
     author="Adam Walder",
-    author_email="walder2@llnl.gov",
-    url="N/A",
+    python_requires=">=3.10, <3.11",
     packages=find_packages(),
-    long_description="""\
-    A package for estimating heterogeneous probability density functions.
-    """,
     classifiers=[
         "Programming Language :: Python",
         "Development Status :: 4 - Beta",
@@ -21,16 +15,20 @@ setup(
     keywords="machine learning density estimation statistics heterogeneous data",
     license="BSD",
     install_requires=[
-        "scipy",
-        "matplotlib",
-        "numpy",
-        "numba",
         "mpmath",
+        "numba",
+        "numpy",
         "pandas",
-        "bokeh",
         "pyspark",
-        "tbb",
+        "pytest",
+        "scipy"
     ],
-    # ext_package='pysp',
-    # ext_modules=[Extension('c_ext', ['extensions/lda.c'])],
+    extras_require={
+        "optional": [
+            "mpi4py",
+            "umap-learn"
+        ]
+    },
+    include_package_data=True,
+    zip_safe=False,
 )
