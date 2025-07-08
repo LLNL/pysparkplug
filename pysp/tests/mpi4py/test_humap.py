@@ -4,7 +4,6 @@ Run with mpiexec -n 4 pytest test_humap.py
 
 """
 import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pickle
 from pysp.bstats import *
 from pysp.mpi4py.bstats import *
@@ -13,7 +12,7 @@ import numpy as np
 from mpi4py import MPI
 
 DATA_DIR = "pysp/tests/data"
-ANSWER_DIR = "pysp_1.0.0/pysparkplug/pysp/tests/answerkeys"
+ANSWER_DIR = "pysp/tests/answerkeys"
 
 
 def test_humap_mpi() -> None:
@@ -35,7 +34,7 @@ def test_humap_mpi() -> None:
     }
 
 
-    results = humap_mpi(data=data, seed=1, umap_kwargs=umap_kwargs)
+    results = humap_mpi(data=data, seed=10, umap_kwargs=umap_kwargs)
     
     if world_rank == 0:
         embeddings, mix_model, fit, posteriors = results
