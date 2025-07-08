@@ -1,9 +1,11 @@
 version: 2
 
 build:
-  os: ubuntu-20.04        # or ubuntu-22.04, whichever you prefer
+  os: ubuntu-20.04
   python:
     version: 3.10.18
+  tools:
+    - sphinx
 
 sphinx:
   configuration: docs/conf.py
