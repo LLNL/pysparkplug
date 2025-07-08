@@ -40,7 +40,7 @@ if __name__ == '__main__':
 	num_topics = 10
 	print_cnt = 10
 	rng = np.random.RandomState(2)
-	#out = open('/Users/boquet1/PycharmProjects/wiki_debug.log', 'wt')
+	#out = open('/Users/username/PycharmProjects/wiki_debug.log', 'wt')
 	out = sys.stdout
 
 
