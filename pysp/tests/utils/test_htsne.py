@@ -6,12 +6,15 @@ from pysp.stats import *
 from pysp.utils.htsne import htsne
 import numpy as np
 
+DATA_DIR = "pysp/tests/data"
+ANSWER_DIR = "pysp/tests/answerkeys"
+
 def test_htsne() -> None:
     """Test if HTSNE behaves as expected with data only input."""
-    with open('pysp/tests/data/testInput_htsne.pkl', 'rb') as f:
+    with open(os.path.join(DATA_DIR, "testInput_htsne.pkl"), 'rb') as f:
         data = pickle.load(f)
     
-    answer = np.load('pysp/tests/answerkeys/testOutput_htsne.npy')
+    answer = np.load(os.path.join(ANSWER_DIR, "testOutput_htsne.npy"))
     rv = htsne(data, seed=10)
 
     assert np.all(answer == rv)
