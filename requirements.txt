@@ -52,7 +52,6 @@ py4j==0.10.9.9
 Pygments==2.19.2
 pynndescent==0.5.13
 pyspark==4.0.0
-pysparkplug @ file:///Users/walder2/llnl_pysparkplug/pysparkplug
 pytest==8.4.1
 python-dateutil==2.9.0.post0
 pytz==2025.2
