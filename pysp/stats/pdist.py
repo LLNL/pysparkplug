@@ -11,7 +11,8 @@ from typing import TypeVar, Optional, Any, Generic, Dict
 
 SS = TypeVar('SS')
 
-def equal_object(x, other):
+def equal_object(x: Any, other: Any) -> bool:
+    """Lazy object comparison."""
     if isinstance(other, type(x)):
         other_vars = vars(other)
         self_vars = vars(x)
