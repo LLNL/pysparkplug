@@ -21,6 +21,7 @@ User installation with pip
 Examples using `stats` distributions that run locally are located in ./pysp/examples/
 
 ```
+> export PYHONPATH=$PYTHONPATH:/path./to/pysparkplug
 > PYTHONPATH=/path/to/package/ python ./pysp/examples/stats_examples/mixture_example.py
 ```
 
@@ -44,6 +45,6 @@ Examples that run with mpi4py are located in ./pysp/mpi4py/examples/
 
 Below will run the example ./pysp/mpi4py/examples/estimation_example.py with 4 cores.
 ```
-> PYTHONPATH=/path/to/pysparkplug
+> export PYHONPATH=$PYTHONPATH:/path./to/pysparkplug
 > mpiexec -n 4 python /path/to/package/pysp/mpi4py/examples/estimation_example.py
 ```
