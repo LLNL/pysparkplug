@@ -1,8 +1,13 @@
 version: 2
 
+build:
+  os: ubuntu-20.04        # or ubuntu-22.04, whichever you prefer
+  python:
+    version: 3.10.18
+
 sphinx:
   configuration: docs/conf.py
 
 python:
   install:
-    - requirements: ../requirements.txt
+    - requirements: docs/requirements.txt
