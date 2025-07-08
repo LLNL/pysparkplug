@@ -55,6 +55,9 @@ if __name__ == "__main__":
     # if we want to save the model
     pickle_on_master(fit, "mpi4py_model_fit.pkl")
 
+    if world_rank == 0:
+        print(f"Wrote file ./mpi4py_model_fit.pkl")
+
 
     
 
