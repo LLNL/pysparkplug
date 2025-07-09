@@ -4,15 +4,15 @@ Useful functions for estimating pysparkplug 'SequenceEncodableProbabilityDistrib
 objects.
 
 """
-import numpy as np
-from numpy.random import RandomState
 import sys
 import time
+import numpy as np
+from numpy.random import RandomState
 
-from pysp.stats import initialize, seq_estimate, seq_log_density_sum, seq_encode, seq_log_density, seq_initialize
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator
+from pysp.stats import seq_estimate, seq_log_density_sum, seq_encode, seq_log_density, seq_initialize
+from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, EncodedDataSequence
 
-from typing import Any, Tuple, List, Union, TypeVar, Optional, IO, Sequence
+from typing import Any, Tuple, List, Union, TypeVar, Optional, IO, Sequence, Callable
 
 T = TypeVar('T')
 E0 = TypeVar('E0')
@@ -270,7 +270,11 @@ def optimize(data: Optional[Sequence[T]], estimator: ParameterEstimator, max_its
         else:
             p = min(max(init_p, 0.0), 1.0)
 
+        # if isinstance(enc_data, pyspark.rdd.RDD):
+        #     mm = initialize(data=data, estimator=est, rng=rng, p=p)
+        # else:
         mm = seq_initialize(enc_data=enc_data, estimator=est, rng=rng, p=p)
+
     else:
         mm = prev_estimate
 
@@ -389,4 +393,67 @@ def iterate(data: List[T], estimator: Optional[ParameterEstimator], max_its: int
             out.write('Iteration %d\t E[dT]=%f.\n' % (i + 1, (time.time() - t0) / float(i + 1)))
 
     return mm
+
+
+def hill_climb(data: List[T],
+               vdata: List[T],
+               estimator: ParameterEstimator,
+               prev_estimate: SequenceEncodableProbabilityDistribution,
+               max_its: int,
+               metric_lambda: Callable[[EncodedDataSequence], Sequence],
+               best_estimate: Optional[SequenceEncodableProbabilityDistribution] = None,
+               enc_data: Optional[EncodedDataSequence] = None,
+               enc_vdata: Optional[EncodedDataSequence] = None,
+               out=sys.stdout,
+               print_iter: int = 1) -> SequenceEncodableProbabilityDistribution:
+    """
+    Performs a hill-climbing optimization to find the best model based on a given metric.
+
+    Args:
+        data (List[T]): The training data to be encoded and used in optimization.
+        vdata (List[T]): Validation data for evaluating the model during optimization.
+        estimator (ParameterEstimator): The parameter estimator used to update the model.
+        prev_estimate (SequenceEncodableProbabilityDistribution): The initial probability distribution estimate.
+        max_its (int): Maximum number of iterations for the optimization process.
+        metric_lambda (Callable[[EncodedDataSequence], Sequence]): A lambda function to compute the metric score for the model.
+        best_estimate (Optional[SequenceEncodableProbabilityDistribution], optional): The best model estimate to start with. Defaults to None.
+        enc_data (Optional[EncodedDataSequence], optional): Encoded training data. If None, it will be computed from `data`. Defaults to None.
+        enc_vdata (Optional[EncodedDataSequence], optional): Encoded validation data. If None, it will be computed from `vdata`. Defaults to None.
+        out (file-like object, optional): Output stream for logging progress. Defaults to `sys.stdout`.
+        print_iter (int, optional): Interval for printing progress during iterations. Defaults to 1.
+
+    Returns:
+        SequenceEncodableProbabilityDistribution: The best model found during the optimization process.
+    """
+    mm = prev_estimate
+
+    if enc_data is None:
+        enc_data = mm.dist_to_encoder().seq_encode(data)
+        enc_data = [(len(data), enc_data)]
+    if enc_vdata is None:
+        enc_vdata = mm.dist_to_encoder().seq_encode(vdata)
+        enc_vdata = [(len(vdata), enc_vdata)]
+
+    best_model = prev_estimate if best_estimate is None else best_estimate
+    _, best_ll = seq_log_density_sum(enc_vdata, best_model)
+    best_score = metric_lambda(vdata, best_model)
+
+    for i in range(max_its):
+
+        mm_next = seq_estimate(enc_data, estimator, mm)
+
+        _, next_ll = seq_log_density_sum(enc_vdata, mm_next)
+        next_score = metric_lambda(vdata, mm_next)
+
+        if (next_score > best_score) or ((next_score == best_score) and (best_ll < next_ll)):
+            best_model = mm_next
+            best_ll = next_ll
+            best_score = next_score
+
+        if i % print_iter == 0:
+            out.write('Iteration %d. LL=%f, Best LL=%f, Best Score=%f\n' % (i + 1, next_ll, best_ll, best_score))
+
+        mm = mm_next
+
+    return best_model
 

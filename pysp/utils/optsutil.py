@@ -1,10 +1,27 @@
-import numpy as np
+"""Utility functions for data pre/post processing."""
+from pathlib import Path
 from collections import defaultdict
 from typing import TypeVar, Union, Sequence, Dict, Tuple, List, Callable, Optional
+import numpy as np
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
 
+def get_parent_directory(filepath: str, levels=0) -> Path:
+    """Get the parent directory of a file.
+    Args:
+        filepath (str): The full path of the file
+        levels (int): Number of levels to move up to reach parent.
+    Returns:
+        Path object containing path to parent directory.
+    
+    """
+    rv = Path(filepath)
+
+    for _ in range(levels):
+        rv = rv.parent
+    
+    return rv
 
 def map_to_integers(x: Sequence[T], val_map: Dict[T, int]) -> List[int]:
     """Map sequence of type T to integers.
@@ -176,8 +193,36 @@ def flat_map(f: Callable[[T], Sequence[T1]], x: Sequence[T]) -> List[T1]:
     return [u for v in x for u in f(v)]
 
 
-def least_occurring(x: Sequence[T], count: Optional[int] = None, percent: Optional[float] = None,
-                    keep_freq: bool = True):
+def least_occurring(
+    x: Sequence[T],
+    count: Optional[int] = None,
+    percent: Optional[float] = None,
+    keep_freq: bool = True
+) -> Union[List[T], Callable]:
+    """
+    Identifies the least occurring elements in a sequence.
+
+    This function finds the least frequently occurring elements in a given sequence
+    based on the specified `count` or `percent`. Optionally, it can return the filtered
+    sequence with only the least occurring elements or just the elements themselves.
+
+    Args:
+        x (Sequence[T]): The input sequence to analyze.
+        count (Optional[int], optional): The maximum number of least occurring elements to return.
+            If specified, the function will return up to `count` least occurring elements. Defaults to `None`.
+        percent (Optional[float], optional): The percentage (as a float between 0 and 1) of least occurring
+            elements to return. If specified, the function will return the least occurring elements that
+            make up this percentage of the total unique elements. Defaults to `None`.
+        keep_freq (bool, optional): If `True`, returns the filtered sequence containing only the least
+            occurring elements. If `False`, returns a list of the least occurring elements themselves.
+            Defaults to `True`.
+
+    Returns:
+        Union[List[T], Callable]:
+            - If `keep_freq` is `True`, returns a filtered sequence containing only the least occurring elements.
+            - If `keep_freq` is `False`, returns a list of the least occurring elements.
+            - If neither `count` nor `percent` is specified, the original sequence `x` is returned.
+    """
     cnt_map = count_by_value(x).items()
     s_idx = np.argsort([u[1] for u in cnt_map])
 

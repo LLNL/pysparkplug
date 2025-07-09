@@ -27,7 +27,8 @@ import numba
 import numpy as np
 from numpy.random import RandomState
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, StatisticAccumulatorFactory, \
-    SequenceEncodableStatisticAccumulator, DataSequenceEncoder, DistributionSampler, ParameterEstimator
+    SequenceEncodableStatisticAccumulator, DataSequenceEncoder, DistributionSampler, ParameterEstimator, \
+    EncodedDataSequence
 from pysp.stats.null_dist import NullDistribution, NullEstimator, NullDataEncoder, NullAccumulator, \
     NullAccumulatorFactory
 from pysp.utils.optsutil import count_by_value
@@ -40,12 +41,32 @@ SS1 = TypeVar('SS1') ### type for value of length dist sufficient statistics.
 
 
 class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
+    """IntegerPLSIDistribution object defining an Integer PLSI distribution.
+
+     Attributes:
+        prob_mat (np.ndarray): 2-d numpy array of floats containing p_mat(word | states) in each row. Dimension is
+            given by number of words times number of states.
+        state_mat (np.ndarray): 2-d numpy array of floats containing p_mat(doc | states) in each row. Dimension is
+            given by number of documents times number of states.
+        doc_vec (np.ndarray): 1-d numpy array of floats containing p_mat(doc=d) for each entry. Length is equal to
+            number of document ids.
+        log_doc_vec (np.ndarray): 1-d numpy array of the log(p_mat(doc=d)).
+        num_vals (int): Number of total words in corpus. (Number of rows in prob_mat).
+        num_states (int): Number of word topics (mixture components). (Number of columns in prob_mat/state_mat).
+        num_docs (int): Total number of document ids in corpus. (Number of rows in state_mat).
+        name (Optional[str]): Optional name for object instance.
+        len_dist (SequenceEncodableProbabilityDistribution): Distribution object for the number of words per
+            document. Defaults to the NullDistribution if None is passed.
+        keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for word_probs, state_probs, and doc_probs.
+
+     """
 
     def __init__(self, state_word_mat: Union[List[List[float]], np.ndarray],
                  doc_state_mat: Union[List[List[float]], np.ndarray], doc_vec: Union[List[float], np.ndarray],
                  len_dist: Optional[SequenceEncodableProbabilityDistribution] = NullDistribution(),
-                 name: Optional[str] = None) -> None:
-        """IntegerPLSIDistribution object defining an Integer PLSI distribution.
+                 name: Optional[str] = None,
+                 keys: Tuple[Optional[str], Optional[str], Optional[str]] = (None, None, None)) -> None:
+        """IntegerPLSIDistribution object.
 
         Args:
             state_word_mat (Union[List[List[float]], np.ndarray]): Array-like of floats that contains a
@@ -57,21 +78,7 @@ class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
             len_dist (Optional[SequenceEncodableProbabilityDistribution]): Optional distribution for the length of
                 each document (i.e. word count in an observed document). Should have support on positive integers.
             name (Optional[str]): Set name to object instance.
-
-        Attributes:
-            prob_mat (np.ndarray): 2-d numpy array of floats containing p_mat(word | states) in each row. Dimension is
-                given by number of words times number of states.
-            state_mat (np.ndarray): 2-d numpy array of floats containing p_mat(doc | states) in each row. Dimension is
-                given by number of documents times number of states.
-            doc_vec (np.ndarray): 1-d numpy array of floats containing p_mat(doc=d) for each entry. Length is equal to
-                number of document ids.
-            log_doc_vec (np.ndarray): 1-d numpy array of the log(p_mat(doc=d)).
-            num_vals (int): Number of total words in corpus. (Number of rows in prob_mat).
-            num_states (int): Number of word topics (mixture components). (Number of columns in prob_mat/state_mat).
-            num_docs (int): Total number of document ids in corpus. (Number of rows in state_mat).
-            name (Optional[str]): Optional name for object instance.
-            len_dist (SequenceEncodableProbabilityDistribution): Distribution object for the number of words per
-                document. Defaults to the NullDistribution if None is passed.
+            keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for word_probs, state_probs, and doc_probs.
 
         """
         self.prob_mat    = np.asarray(state_word_mat, dtype=np.float64)
@@ -83,15 +90,16 @@ class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
         self.num_docs    = self.state_mat.shape[0]
         self.name        = name
         self.len_dist    = len_dist if len_dist is not None else NullDistribution()
+        self.keys = keys
 
     def __str__(self) -> str:
-        """Return string representation of object instance."""
         s1 = ','.join(['[' + ','.join(map(str, self.prob_mat[i, :])) + ']' for i in range(len(self.prob_mat))])
         s2 = ','.join(['[' + ','.join(map(str, self.state_mat[i, :])) + ']' for i in range(len(self.state_mat))])
         s3 = ','.join(map(str, self.doc_vec))
         s4 = repr(self.name)
         s5 = str(self.len_dist)
-        return 'IntegerPLSIDistribution([%s], [%s], [%s], name=%s, len_dist=%s)'%(s1, s2, s3, s4, s5)
+        s6 = repr(self.keys)
+        return 'IntegerPLSIDistribution([%s], [%s], [%s], name=%s, len_dist=%s, keys=%s)'%(s1, s2, s3, s4, s5, s6)
 
     def density(self, x: Tuple[int, Sequence[Tuple[int, float]]]) -> float:
         """Evaluate the density of PLSI model for an observation x.
@@ -102,7 +110,7 @@ class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
             x (Tuple[int, Sequence[Tuple[int, float]]]): Single observation of integer PLSI.
 
         Returns:
-            Density evaluated at observed value x.
+            float: Density evaluated at observed value x.
 
         """
         return np.exp(self.log_density(x))
@@ -126,7 +134,7 @@ class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
             x (Tuple[int, Sequence[Tuple[int, float]]]): (doc_id, [(value_id, count_for_value)]). See above for details.
 
         Returns:
-            Log-density evaluated at a single observation x.
+            float: Log-density evaluated at a single observation x.
 
         """
 
@@ -154,7 +162,7 @@ class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
                 (doc_id, [(value_id, count_for_value)]).
 
         Returns:
-            Numpy array of length S (num_states).
+            np.ndarray: Numpy array of length S (num_states).
 
         """
         xv = np.asarray([u[0] for u in x[1]], dtype=int)
@@ -162,29 +170,12 @@ class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
 
         return np.dot(np.log(self.prob_mat[xv, :]).T, xc)
 
-    def seq_log_density(self, x: Tuple[Optional[T1], Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-                                                           np.ndarray]]) -> np.ndarray:
-        """Vectorized evaluation of the log-density for an encoded sequence of iid observation from a PLSI model.
+    def seq_log_density(self, x: 'IntegerPLSIEncodedDataSequence') -> np.ndarray:
 
-        See log_density() function for details on the log-likelihood.
+        if not isinstance(x, IntegerPLSIEncodedDataSequence):
+            raise Exception('IntegerPLSIEncodedDataSequence required for seq_log_density().')
 
-        The encoded sequence 'x' is a Tuple length 2. The first component contains data type Optional[T1]
-        corresponding to the sequence encoding of the lengths. The second component is a Tuple of length 6 containing
-            xv (ndarray[int]): Numpy array of flattened word values.
-            xc (ndarray[float]): Numpy array of flattened counts for word values above.
-            xd (ndarray[int]): Document id for each word-count pair in the arrays above.
-            xi (ndarray[int]): Observed sequence index for each word-count pair in the arrays above.
-            xn (ndarray[float]): Numpy array of the total number of words in each document.
-            xm (ndarray[float]): Flattened array of document id's for the lengths above (len = len(x)).
-
-        Args:
-            x: Encoded sequence of iid observations of PLSI model. See above for details.
-
-        Returns:
-            Numpy array of log-density evaluated at each observation in the encoded sequence.
-
-        """
-        nn, (xv, xc, xd, xi, xn, xm) = x
+        nn, (xv, xc, xd, xi, xn, xm) = x.data
         cnt = len(xn)
 
         w = np.zeros(len(xv), dtype=np.float64)
@@ -201,77 +192,64 @@ class IntegerPLSIDistribution(SequenceEncodableProbabilityDistribution):
 
         return rv
 
-    def seq_component_log_density(self, x: Tuple[Optional[T1], Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-                                                                     np.ndarray, np.ndarray]]) -> np.ndarray:
+    def seq_component_log_density(self, x: 'IntegerPLSIEncodedDataSequence') -> np.ndarray:
         """Vectorized evaluation of the component log-density for each observation in an encoded sequence of iid PLSI
             observations.
 
         See component_log_density() function for details on component log-likelihood evaluation.
 
-        The encoded sequence 'x' is a Tuple length 2. The first component contains data type Optional[T1]
-        corresponding to the sequence encoding of the lengths. The second component is a Tuple of length 6 containing
-            xv (ndarray[int]): Numpy array of flattened word values.
-            xc (ndarray[float]): Numpy array of flattened counts for word values above.
-            xd (ndarray[int]): Document id for each word-count pair in the arrays above.
-            xi (ndarray[int]): Observed sequence index for each word-count pair in the arrays above.
-            xn (ndarray[float]): Numpy array of the total number of words in each document.
-            xm (ndarray[float]): Flattened array of document id's for the lengths above (len = len(x)).
-
         Args:
-            x: Encoded sequence of iid observations of PLSI model. See above for details.
+            x (IntegerPLSIEncodedDataSequence): EncodedDataSequence of PLSI observations.
 
         Returns:
-            2-d numpy array containing N rows of num_state sized arrays.
+            np.ndarray: 2-d numpy array containing N rows of num_state sized arrays.
 
         """
-        nn, (xv, xc, xd, xi, xn, xm) = x
+
+        if not isinstance(x, IntegerPLSIEncodedDataSequence):
+            raise Exception('IntegerPLSIEncodedDataSequence required for seq_component_log_density().')
+
+        nn, (xv, xc, xd, xi, xn, xm) = x.data
         rv = np.zeros((xi[-1]+1, self.num_states), dtype=np.float64)
         w_mat = self.prob_mat
         fast_seq_component_log_density(xv, xc, xd, xi, xm, w_mat, rv)
         return rv
 
     def sampler(self, seed: Optional[int] = None) -> 'IntegerPLSISampler':
-        """Return an IntegerPLSISampler object from IntegerPLSIDistribution instance."""
         return IntegerPLSISampler(self, seed)
 
     def estimator(self, pseudo_count: Optional[float] = None) -> 'IntegerPLSIEstimator':
-        """Create an IntegerPLSIEstimator object from IntegerPLSIDistribution instance.
-
-        Args:
-            pseudo_count (Optional[float]): Re-weight object instance sufficient statistics when passed to estimator.
-
-        Returns:
-            IntegerPLSIEstimator object.
-
-        """
         if pseudo_count is None:
             return IntegerPLSIEstimator(num_vals=self.num_vals, num_states=self.num_states,num_docs=self.num_docs,
-                                        len_estimator=self.len_dist.estimator(),name=self.name)
+                                        len_estimator=self.len_dist.estimator(),name=self.name, keys=self.keys)
         else:
             pseudo_count = (pseudo_count, pseudo_count, pseudo_count)
             return IntegerPLSIEstimator(num_vals=self.num_vals, num_states=self.num_states, num_docs=self.num_docs,
                                         pseudo_count = pseudo_count,
                                         suff_stat=(self.prob_mat.T, self.state_mat, self.doc_vec),
-                                        len_estimator=self.len_dist.estimator(), name=self.name)
+                                        len_estimator=self.len_dist.estimator(), name=self.name, keys=self.keys)
 
     def dist_to_encoder(self) -> 'IntegerPLSIDataEncoder':
-        """Returns IntegerPLSIDataEncoder object."""
+
         return IntegerPLSIDataEncoder(len_encoder=self.len_dist.dist_to_encoder())
 
 
 class IntegerPLSISampler(DistributionSampler):
+    """IntegerPLSISampler object for sampling from IntegerPLSIDistribution.
+
+    Attributes:
+        rng (RandomState): RandomState object with seed set if passed.
+        dist (IntegerPLSIDistribution): IntegerPLSIDistribution instance to sampler from.
+        size_rng (RandomState): RandomState object for sampling the length of documents.
+
+    """
 
     def __init__(self, dist: IntegerPLSIDistribution, seed: Optional[int] = None) -> None:
-        """IntegerPLSISampler object for sampling from IntegerPLSIDistribution.
+        """IntegerPLSISampler object.
 
         Args:
             dist (IntegerPLSIDistribution): IntegerPLSIDistribution instance to sampler from.
             seed (Optional[int]): Set seed for random number generator used in sampling.
-
-        Attributes:
-            rng (RandomState): RandomState object with seed set if passed.
-            dist (IntegerPLSIDistribution): IntegerPLSIDistribution instance to sampler from.
-            size_rng (RandomState): RandomState object for sampling the length of documents.
 
         """
         self.rng = np.random.RandomState(seed)
@@ -305,12 +283,35 @@ class IntegerPLSISampler(DistributionSampler):
 
 
 class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
+    """IntegerPLSIAccumulator object for aggregating sufficient statistics from observed data.
+
+    Note: Keys in order, words/values, states, documents.
+
+    Attributes:
+        num_vals (int): Number of words in the corpus.
+        num_states (int): Number of word-topics or mixture components.
+        num_docs (int): Number of authors (doc_ids) in the corpus.
+        word_count (ndarray): Numpy array of shape num_states by num_vals for aggregating state/word counts.
+        comp_count (ndarray): Numpy array (num_docs by num_states) for aggregating doc/state counts.
+        doc_count (ndarray): Numpy array for aggregating counts of authors (prior on doc_ids).
+        name (Optional[str]): Name of object instance.
+        wc_key (Optional[str]): Key for merging 'word_count' with objects containing matching keys.
+        sc_key (Optional[str]): Key for merging 'comp_count' with objects containing matching keys.
+        dc_key (Optional[str]): Key for merging 'doc_count' with objects containing matching keys.
+        len_acc (SequenceEncodableStatisticAccumulator): Accumulator object for the lengths of documents (total
+            word counts). Defaults to the NullAccumulator if None is passed.
+
+        _init_rng (bool): True if RandomState objects for accumulator have been initialized.
+        _acc_rng (Optional[RandomState]): RandomState object for initializing the PLSI model.
+        _len_rng (Optional[RandomState]): RandomState object for initializing the length accumulator.
+
+    """
 
     def __init__(self, num_vals: int, num_states: int, num_docs: int,
                  len_acc: Optional[SequenceEncodableStatisticAccumulator] = NullAccumulator(),
                  name: Optional[str] = None,
                  keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None)) -> None:
-        """IntegerPLSIAccumulator object for aggregating sufficient statistics from observed data.
+        """IntegerPLSIAccumulator object.
 
         Note: Keys in order, words/values, states, documents.
 
@@ -324,24 +325,6 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
             keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Optional keys for words, states, and
                 authors (doc_ids).
 
-        Attributes:
-            num_vals (int): Number of words in the corpus.
-            num_states (int): Number of word-topics or mixture components.
-            num_docs (int): Number of authors (doc_ids) in the corpus.
-            word_count (ndarray): Numpy array of shape num_states by num_vals for aggregating state/word counts.
-            comp_count (ndarray): Numpy array (num_docs by num_states) for aggregating doc/state counts.
-            doc_count (ndarray): Numpy array for aggregating counts of authors (prior on doc_ids).
-            name (Optional[str]): Name of object instance.
-            wc_key (Optional[str]): Key for merging 'word_count' with objects containing matching keys.
-            sc_key (Optional[str]): Key for merging 'comp_count' with objects containing matching keys.
-            dc_key (Optional[str]): Key for merging 'doc_count' with objects containing matching keys.
-            len_acc (SequenceEncodableStatisticAccumulator): Accumulator object for the lengths of documents (total
-                word counts). Defaults to the NullAccumulator if None is passed.
-
-            _init_rng (bool): True if RandomState objects for accumulator have been initialized.
-            _acc_rng (Optional[RandomState]): RandomState object for initializing the PLSI model.
-            _len_rng (Optional[RandomState]): RandomState object for initializing the length accumulator.
-
         """
         self.num_vals   = num_vals
         self.num_states = num_states
@@ -353,24 +336,13 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
         self.wc_key, self.sc_key, self.dc_key = keys if keys is not None else (None, None, None)
         self.len_acc    = len_acc if len_acc is not None else NullAccumulator()
 
-        ### Initializer seeds
+        # Initializer seeds
         self._init_rng: bool = False
         self._acc_rng: Optional[RandomState] = None
         self._len_rng: Optional[RandomState] = None
 
     def update(self, x: Tuple[int, Sequence[Tuple[int, float]]], weight: float, estimate: IntegerPLSIDistribution) \
             -> None:
-        """Update the sufficient statistics of object instance for a single observation x.
-
-        Args:
-            x (Tuple[int, Sequence[Tuple[int, float]]]): An observation from integer PLSI model.
-            weight (float): Observation weight.
-            estimate (IntegerPLSIDistribution): Prior estimate of IntegerPLSIDistribution object.
-
-        Returns:
-            None.
-
-        """
         d_id = x[0]
         xv = np.asarray([u[0] for u in x[1]])
         xc = np.asarray([u[1] for u in x[1]])
@@ -384,34 +356,12 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
         self.len_acc.update(np.sum(xc), weight, estimate.len_dist)
 
     def _rng_initialize(self, rng: RandomState) -> None:
-        """Initialize RandomState objects for accumulators from rng.
-
-        This function exists to ensure consistency between initialize() and seq_initialize() functions.
-
-        Args:
-            rng (RandomState): Used to generate seed value for _acc_rng and _len_rng.
-
-        Returns:
-            None.
-
-        """
         seeds = rng.randint(maxrandint, size=2)
         self._acc_rng = RandomState(seed=seeds[0])
         self._len_rng = RandomState(seed=seeds[1])
         self._init_rng = True
 
     def initialize(self, x: Tuple[int, Sequence[Tuple[int, float]]], weight: float, rng: RandomState) -> None:
-        """Initialize sufficient statistics of object instance with observation x.
-
-        Args:
-            x (Tuple[int, Sequence[Tuple[int, float]]]): An observation from integer PLSI model.
-            weight (float): Observation weight.
-            rng (RandomState): RandomState object for seeded initialization.
-
-        Returns:
-            None.
-
-        """
         if not self._init_rng:
             self._rng_initialize(rng)
 
@@ -427,29 +377,9 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
 
         self.len_acc.update(np.sum(xc), weight, self._len_rng)
 
-    def seq_initialize(self, x: Tuple[Optional[T1], Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-                                                          np.ndarray]], weights: np.ndarray, rng: RandomState) -> None:
-        """Vectorized initialization of sufficient statistics form an encoded sequence of observations in arg 'x'.
+    def seq_initialize(self, x: 'IntegerPLSIEncodedDataSequence', weights: np.ndarray, rng: RandomState) -> None:
 
-        The encoded sequence 'x' is a Tuple length 2. The first component contains data type Optional[T1]
-        corresponding to the sequence encoding of the lengths. The second component is a Tuple of length 6 containing
-            xv (ndarray[int]): Numpy array of flattened word values.
-            xc (ndarray[float]): Numpy array of flattened counts for word values above.
-            xd (ndarray[int]): Document id for each word-count pair in the arrays above.
-            xi (ndarray[int]): Observed sequence index for each word-count pair in the arrays above.
-            xn (ndarray[float]): Numpy array of the total number of words in each document.
-            xm (ndarray[float]): Flattened array of document id's for the lengths above (len = len(x)).
-
-        Args:
-            x: Encoded sequence of iid observations of PLSI. See above for details.
-            weights (ndarray): Weights for observations in encoded sequence.
-            rng (RandomState): Used to initialize member RandomState variables.
-
-        Returns:
-            None.
-
-        """
-        nn, (xv, xc, xd, xi, xn, xm) = x
+        nn, (xv, xc, xd, xi, xn, xm) = x.data
 
         if not self._init_rng:
             self._rng_initialize(rng)
@@ -462,30 +392,10 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
 
         self.len_acc.seq_initialize(nn, weights, self._len_rng)
 
-    def seq_update(self, x: Tuple[Optional[T1], Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-                                                      np.ndarray]],
+    def seq_update(self, x: 'IntegerPLSIEncodedDataSequence',
                    weights: np.ndarray, estimate: IntegerPLSIDistribution) -> None:
-        """Vectorized update of sufficient statistics for encoded sequence of iid observations in x.
 
-        The encoded sequence 'x' is a Tuple length 2. The first component contains data type Optional[T1]
-        corresponding to the sequence encoding of the lengths. The second component is a Tuple of length 6 containing
-            xv (ndarray[int]): Numpy array of flattened word values.
-            xc (ndarray[float]): Numpy array of flattened counts for word values above.
-            xd (ndarray[int]): Document id for each word-count pair in the arrays above.
-            xi (ndarray[int]): Observed sequence index for each word-count pair in the arrays above.
-            xn (ndarray[float]): Numpy array of the total number of words in each document.
-            xm (ndarray[float]): Flattened array of document id's for the lengths above (len = len(x)).
-
-        Args:
-            x: Encoded sequence of iid observations of PLSI model. See above for details.
-            weights (np.ndarray): Numpy array of observation weights.
-            estimate (IntegerPLSIDistribution): Prior estimate of IntegerPLSIDistribution object.
-
-        Returns:
-            None.
-
-        """
-        nn, (xv, xc, xd, xi, xn, xm) = x
+        nn, (xv, xc, xd, xi, xn, xm) = x.data
         fast_seq_update(xv, xc, xd, xi, xm, weights, estimate.prob_mat, estimate.state_mat, self.word_count,
                         self.comp_count, self.doc_count)
 
@@ -509,21 +419,7 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
         self.len_acc.seq_update(nn, weights, estimate.len_dist)
 
     def combine(self, suff_stat: Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[SS1]]) -> 'IntegerPLSIAccumulator':
-        """Combine the sufficient statistics in arg 'suff_stat' with object instance.
 
-        Arg 'suff_stat' is Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[SS1]] containing:
-            suff_stat[0] (np.ndarray): State/word counts with matching dimension of num_states by num_vals.
-            suff_stat[1] (np.ndarray): Doc/state counts with matching dimension of num_docs by num_states.
-            suff_stat[2] (np.ndarray): Author counts with length (num_docs).
-            suff_stat[3] (Optional[SS1]): Sufficient statistics for the length of document distribution having type SS1.
-
-        Args:
-            suff_stat: See above for details.
-
-        Returns:
-            IntegerPLSIAccumulator object.
-
-        """
         self.word_count += suff_stat[0]
         self.comp_count += suff_stat[1]
         self.doc_count += suff_stat[2]
@@ -533,33 +429,10 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
         return self
 
     def value(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[Any]]:
-        """Returns sufficient statistics of IntegerPLSIAccumulator object instance.
-
-        Returned value 'suff_stat' is Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[SS1]] containing:
-            suff_stat[0] (np.ndarray): State/word counts with matching dimension of num_states by num_vals.
-            suff_stat[1] (np.ndarray): Doc/state counts with matching dimension of num_docs by num_states.
-            suff_stat[2] (np.ndarray): Author counts with length (num_docs).
-            suff_stat[3] (Optional[SS1]): Sufficient statistics for the length of document distribution having type SS1.
-
-        """
         return self.word_count, self.comp_count, self.doc_count, self.len_acc.value()
 
     def from_value(self, x: Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[SS1]]) -> 'IntegerPLSIAccumulator':
-        """Set the sufficient statistics of object instance to arg 'x' values.
 
-        Arg 'x' is Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[SS1]] containing:
-            x[0] (np.ndarray): State/word counts with matching dimension of num_states by num_vals.
-            x[1] (np.ndarray): Doc/state counts with matching dimension of num_docs by num_states.
-            x[2] (np.ndarray): Author counts with length (num_docs).
-            x[3] (Optional[SS1]): Sufficient statistics for the length of document distribution having type SS1.
-
-        Args:
-            x: Aggregated sufficient statistics. See above for details.
-
-        Returns:
-            IntegerPLSIAccumulator object.
-
-        """
         self.word_count = x[0]
         self.comp_count = x[1]
         self.doc_count = x[2]
@@ -568,21 +441,7 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
         return self
 
     def key_merge(self, stats_dict: Dict[str, Any]) -> None:
-        """Merge the sufficient statistics of object instance with matching keys.
 
-        If wc_key is set, merge the state/word count variable.
-        If sc_key is set, merge the doc/state count variable.
-        If dc_key is set, merge the author count variable.
-
-        Call key_merge() of accumulator for the length. Note nothing is done for this if default NullAccumulator is set.
-
-        Args:
-            stats_dict (Dict[str, Any]): Maps keys to sufficient statistics.
-
-        Returns:
-            None.
-
-        """
         if self.wc_key is not None:
             if self.wc_key in stats_dict:
                 stats_dict[self.wc_key] += self.word_count
@@ -604,22 +463,6 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
         self.len_acc.key_merge(stats_dict)
 
     def key_replace(self, stats_dict: Dict[str, Any]) -> None:
-        """Set the sufficient statistics of object instance to matching key values in arg 'stats_dict'.
-
-        If wc_key is set, set the state/word count variable to matching key in stats_dict.
-        If sc_key is set, set the doc/state count variable to matching key in stats_dict.
-        If dc_key is set, set the author count variable to matching key in stats_dict.
-
-        Call key_replace() of accumulator for the length. Note nothing is done for this if default NullAccumulator is
-        set.
-
-        Args:
-            stats_dict (Dict[str, Any]): Maps keys to sufficient statistics.
-
-        Returns:
-            None.
-
-        """
         if self.wc_key is not None:
             if self.wc_key in stats_dict:
                 self.word_count = stats_dict[self.wc_key]
@@ -638,12 +481,25 @@ class IntegerPLSIAccumulator(SequenceEncodableStatisticAccumulator):
         return IntegerPLSIDataEncoder(len_encoder=len_encoder)
 
 class IntegerPLSIAccumulatorFactory(StatisticAccumulatorFactory):
+    """IntegerPLSIAccumulatorFactory object for creating IntegerPLSIAccumulator objects.
+
+    Attributes:
+        num_vals (int): Number of words/values in PLSI.
+        num_states (int): Number of states in PLSI.
+        num_docs (int): Number of doc_ids (authors) in PLSI.
+        len_factory (StatisticsAccumulatorFactory): Accumulator factory object for length distribution. Defaults
+            to the NullAccumulatorFactory(). Should have support on non-negative integers.
+        keys (Tuple[Optional[str], Optional[str], Optional[str]]): Set keys for merging word, state, and doc
+            sufficient statistics with matching keys.
+        name (Optional[str]): Set name for object.
+
+    """
 
     def __init__(self, num_vals: int, num_states: int, num_docs: int,
                  len_factory: Optional[StatisticAccumulatorFactory] = NullAccumulatorFactory(),
                  keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
                  name: Optional[str] = None) -> None:
-        """IntegerPLSIAccumulatorFactory object for creating IntegerPLSIAccumulator objects.
+        """IntegerPLSIAccumulatorFactory object.
 
         Args:
             num_vals (int): Number of words/values in PLSI.
@@ -652,16 +508,6 @@ class IntegerPLSIAccumulatorFactory(StatisticAccumulatorFactory):
             len_factory (Optional[StatisticsAccumulatorFactory]): Accumulator factory object for length distribution.
             keys (Optional[Tuple[Optional[str], Optional[str], Optional[str]]]): Set keys for merging
                 word, state, and doc sufficient statistics with matching keys.
-            name (Optional[str]): Set name for object.
-
-        Attributes:
-            num_vals (int): Number of words/values in PLSI.
-            num_states (int): Number of states in PLSI.
-            num_docs (int): Number of doc_ids (authors) in PLSI.
-            len_factory (StatisticsAccumulatorFactory): Accumulator factory object for length distribution. Defaults
-                to the NullAccumulatorFactory(). Should have support on non-negative integers.
-            keys (Tuple[Optional[str], Optional[str], Optional[str]]): Set keys for merging word, state, and doc
-                sufficient statistics with matching keys.
             name (Optional[str]): Set name for object.
 
         """
@@ -673,11 +519,27 @@ class IntegerPLSIAccumulatorFactory(StatisticAccumulatorFactory):
         self.name = name
 
     def make(self) -> 'IntegerPLSIAccumulator':
-        """Returns IntegerPLSIAccumulator object."""
         return IntegerPLSIAccumulator(self.num_vals, self.num_states, self.num_docs, len_acc=self.len_factory.make(),
                                       keys=self.keys, name=self.name)
 
 class IntegerPLSIEstimator(ParameterEstimator):
+    """IntegerPLSIEstimator for estimating integer PLSI distributions from aggregated sufficient statistics.
+
+    Attributes:
+        num_vals (int): Number of words/values in PLSI.
+        num_states (int): Number of states in PLSI.
+        num_docs (int): Number of doc_ids (authors) in PLSI.
+        len_estimator (ParameterEstimator): Optional ParameterEstimator object for the length of documents. Should
+            have support on non-negative integers. Defaults to NullEstimator() if None is passed.
+        pseudo_count (Tuple[Optional[float], Optional[float], Optional[float]]): Optional re-weight sufficient
+            statistics in 'estimate()' function. Defaults to (None, None, None) if None is passed.
+        suff_stat (Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]): Optional
+            Tuple of numpy arrays containing 'word_counts' (num_states by num_vals), 'state_counts' (num_docs by
+            num_states), and doc_counts (length num_docs). Defaults to (None, None, None) if None is passed.
+        name (Optional[str]): Name of object instance.
+        keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for merging word, state, and doc
+            sufficient statistics with matching keys.
+    """
 
     def __init__(self, num_vals: int, num_states: int, num_docs: int,
                  len_estimator: Optional[ParameterEstimator] = NullEstimator(),
@@ -686,7 +548,7 @@ class IntegerPLSIEstimator(ParameterEstimator):
                                            Optional[np.ndarray]]] = (None, None, None),
                  name: Optional[str] = None,
                  keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None)) -> None:
-        """IntegerPLSIEstimator for estimating integer PLSI distributions from aggregated sufficient statistics.
+        """IntegerPLSIEstimator object.
 
         Args:
             num_vals (int): Number of words/values in PLSI.
@@ -703,20 +565,6 @@ class IntegerPLSIEstimator(ParameterEstimator):
             keys (Tuple[Optional[str], Optional[str], Optional[str]]): Set keys for merging word, state, and doc
                 sufficient statistics with matching keys.
 
-        Attributes:
-            num_vals (int): Number of words/values in PLSI.
-            num_states (int): Number of states in PLSI.
-            num_docs (int): Number of doc_ids (authors) in PLSI.
-            len_estimator (ParameterEstimator): Optional ParameterEstimator object for the length of documents. Should
-                have support on non-negative integers. Defaults to NullEstimator() if None is passed.
-            pseudo_count (Tuple[Optional[float], Optional[float], Optional[float]]): Optional re-weight sufficient
-                statistics in 'estimate()' function. Defaults to (None, None, None) if None is passed.
-            suff_stat (Tuple[Optional[np.ndarray], Optional[np.ndarray], Optional[np.ndarray]]): Optional
-                Tuple of numpy arrays containing 'word_counts' (num_states by num_vals), 'state_counts' (num_docs by
-                num_states), and doc_counts (length num_docs). Defaults to (None, None, None) if None is passed.
-            name (Optional[str]): Name of object instance.
-            keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for merging word, state, and doc
-                sufficient statistics with matching keys.
         """
         self.suff_stat     = suff_stat if suff_stat is not None else (None, None, None)
         self.pseudo_count  = pseudo_count if pseudo_count is not None else (None, None, None)
@@ -728,22 +576,12 @@ class IntegerPLSIEstimator(ParameterEstimator):
         self.name          = name
 
     def accumulator_factory(self) -> 'IntegerPLSIAccumulatorFactory':
-        """Returns IntegerPLSIAccumulatorFactory object."""
-        len_est = self.len_estimator.accumulator_factory()
-        return IntegerPLSIAccumulatorFactory(self.num_vals, self.num_states, self.num_docs, len_est, self.keys)
+        len_fac = self.len_estimator.accumulator_factory()
+        return IntegerPLSIAccumulatorFactory(num_vals=self.num_vals, num_states=self.num_states, num_docs=self.num_docs, len_factory=len_fac, keys=self.keys, name=self.name)
 
     def estimate(self, nobs: Optional[float], suff_stat: Tuple[np.ndarray, np.ndarray, np.ndarray, Optional[SS1]])\
             -> 'IntegerPLSIDistribution':
-        """Estimate IntegerPLSIDistribution from aggregated sufficient statistics in arg 'suff_stat'.
 
-        Args:
-            nobs (Optional[float]): Optional number of observations used to accumulate 'suff_stat'.
-            suff_stat: See above for details.
-
-        Returns:
-            IntegerPLSIDistribution object.
-
-        """
         word_count, comp_count, doc_count, len_suff_stats = suff_stat
 
         if self.pseudo_count[0] is not None and self.suff_stat[0] is not None:
@@ -791,42 +629,35 @@ class IntegerPLSIEstimator(ParameterEstimator):
 
 
 class IntegerPLSIDataEncoder(DataSequenceEncoder):
+    """IntegerPLSIDataEncoder object for encoding sequences of iid observations from a PLSI model.
+
+    Attributes:
+        len_encoder (DataSequenceEncoder): DataSequenceEncoder for the total number of words in each document,
+            defaulting to NullDataEncoder if None is passed.
+
+    """
 
     def __init__(self, len_encoder: Optional[DataSequenceEncoder] = NullDataEncoder()) -> None:
-        """IntegerPLSIDataEncoder object for encoding sequences of iid observations from a PLSI model.
+        """IntegerPLSIDataEncoder object.
 
         Args:
             len_encoder (Optional[DataSequenceEncoder]): Optional DataSequenceEncoder for the total number of words
                 in each document.
 
-        Attributes:
-            len_encoder (DataSequenceEncoder): DataSequenceEncoder for the total number of words in each document,
-                defaulting to NullDataEncoder if None is passed.
-
         """
         self.len_encoder = len_encoder
 
     def __str__(self) -> str:
-        """Returns a string representation of object instance."""
         return 'IntegerPLSIDataEncoder(len_dist=' + str(self.len_encoder) + ')'
 
     def __eq__(self, other: object) -> bool:
-        """Check if object is equivalent to instance of IntegerPLSIDataEncoder.
-
-        Args:
-            other (object): Other object to compare to instance.
-
-        Returns:
-            True if object is an instance of IntegerPLSIDataEncoder with matching 'len_encoder' attribute.
-
-        """
         if isinstance(other, IntegerPLSIDataEncoder):
             return other.len_encoder == self.len_encoder
         else:
             return False
 
     def seq_encode(self, x: Sequence[Tuple[int, Sequence[Tuple[int, float]]]])\
-            -> Tuple[Any, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+            -> 'IntegerPLSIEncodedDataSequence':
         """Encode a sequence of iid PLSI observations for use with vectorized functions.
 
         Input arg 'x' is a sequence of iid PLSI observations having form
@@ -846,7 +677,7 @@ class IntegerPLSIDataEncoder(DataSequenceEncoder):
             x (Sequence[Tuple[int, Sequence[Tuple[int, float]]]]): See above for details.
 
         Returns:
-            See above for details.
+            IntegerPLSIEncodedDataSequence
 
         """
         xv = []
@@ -877,7 +708,30 @@ class IntegerPLSIDataEncoder(DataSequenceEncoder):
 
         nn = self.len_encoder.seq_encode(xn)
 
-        return nn, (xv, xc, xd, xi, xn, xm)
+        return IntegerPLSIEncodedDataSequence(data=(nn, (xv, xc, xd, xi, xn, xm)))
+
+class IntegerPLSIEncodedDataSequence(EncodedDataSequence):
+    """IntegerPLSIEncodedDataSequence object for vectorized function calls.
+
+    Notes:
+        E = Tuple[EncodedDataSequence, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]
+
+    Attributes:
+        data (E): Encoded sequence of PLSI observations.
+
+    """
+
+    def __init__(self, data: Tuple[EncodedDataSequence, Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]):
+        """IntegerPLSIEncodedDataSequence object.
+
+        Args:
+            data (E): Encoded sequence of PLSI observations.
+
+        """
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'IntegerPLSIEncodedDataSequence(data={self.data})'
 
 
 @numba.njit('void(int32[:], float64[:], int32[:], int32[:], int32[:], float64[:,:], float64[:,:], float64[:], '

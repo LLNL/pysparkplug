@@ -26,7 +26,8 @@ Further,
 """
 import numpy as np
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
-    StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder
+    StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder, EncodedDataSequence
+
 from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullAccumulatorFactory, NullEstimator
 from pysp.arithmetic import maxrandint
 import pysp.utils.vector as vec
@@ -37,13 +38,29 @@ from pysp.stats.sequence import SequenceDistribution
 from typing import Optional, List, Union, Any, Tuple, Sequence, TypeVar, Dict
 
 T = TypeVar('T') ## Data type for topics
-E1 = TypeVar('E1') ## Encoded sequence from topic encoder.
-E2 = TypeVar('E2') ## Encoded sequence from length encoder.
+
 SS1 = TypeVar('SS1') ### Suff stat type for topics.
 SS2 = TypeVar('SS2') ## Suff stat type for length distribution.
 
 
 class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
+    """HierarchicalMixtureDistribution object defining a hierarchical mixture distribution.
+
+    Attributes:
+        topics (Sequence[SequenceEncodableProbabilityDistribution]): Topic distributions shared in hierarchical
+            mixture distribution.
+        num_topics (int): Number of topic distributions (i.e. sets number of inner-mixture weights).
+        num_mixtures (int): Number of weights in outter-mixture (i.e. sets numer of top-layer mixture weights.)
+        w (np.ndarray): 1-d numpy array of outer-mixture weights. Should sum to 1.
+        log_w (np.ndarray): Numpy array of the log of w above.
+        taus (np.ndarray): 2-d array of dimension (num_mixtures by num_topics).
+        log_taus (np.ndarray): 2-d array of the log of tau above.
+        len_dist (SequenceEncodableProbabilityDistribution): Distribution for the sequence length on topics.
+            Defaults to the NullDistribution if None is passed.
+        name (Optional[str]): Name for object instance.
+        keys (Tuple[Optional[str], Optional[str]]): Keys for the weights and topics.
+
+    """
 
     def __init__(self,
                  topics: Sequence[SequenceEncodableProbabilityDistribution],
@@ -52,7 +69,7 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
                  len_dist: Optional[SequenceEncodableProbabilityDistribution] = NullDistribution(),
                  name: Optional[str] = None,
                  keys: Optional[Tuple[Optional[str], Optional[str]]] = (None, None)) -> None:
-        """HierarchicalMixtureDistribution object defining a hierarchical mixture distribution.
+        """HierarchicalMixtureDistribution object.
 
         Args:
             topics (Sequence[SequenceEncodableProbabilityDistribution]): Topic distributions shared in hierarchical
@@ -65,20 +82,6 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
                 distribution for the component mixtures
             name (Optional[str]): Set name for object instance.
             keys (Optional[Tuple[Optional[str], Optional[str]]]): Set keys for the weights and topics.
-
-        Attributes:
-            topics (Sequence[SequenceEncodableProbabilityDistribution]): Topic distributions shared in hierarchical
-                mixture distribution.
-            num_topics (int): Number of topic distributions (i.e. sets number of inner-mixture weights).
-            num_mixtures (int): Number of weights in outter-mixture (i.e. sets numer of top-layer mixture weights.)
-            w (np.ndarray): 1-d numpy array of outer-mixture weights. Should sum to 1.
-            log_w (np.ndarray): Numpy array of the log of w above.
-            taus (np.ndarray): 2-d array of dimension (num_mixtures by num_topics).
-            log_taus (np.ndarray): 2-d array of the log of tau above.
-            len_dist (SequenceEncodableProbabilityDistribution): Distribution for the sequence length on topics.
-                Defaults to the NullDistribution if None is passed.
-            name (Optional[str]): Name for object instance.
-            keys (Tuple[Optional[str], Optional[str]]): Keys for the weights and topics.
 
         """
         with np.errstate(divide='ignore'):
@@ -110,7 +113,7 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
             x (Sequence[T]): A sequence of type data type T's.
 
         Returns:
-            Density evaluated at x.
+            float: Density evaluated at x.
 
         """
         return np.exp(self.log_density(x))
@@ -124,7 +127,7 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
             x (Sequence[T]): A sequence of type data type T's.
 
         Returns:
-            Log-density evaluated at x.
+            float: Log-density evaluated at x.
 
         """
         enc_x = self.dist_to_encoder().seq_encode([x])
@@ -137,12 +140,11 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
             x (Sequence[T]): An observed sequence of data type T.
 
         Returns:
-            Numpy array of length 'num_mixtures'.
+            np.ndarray: Numpy array of length 'num_mixtures'.
 
         """
         enc_x = self.dist_to_encoder().seq_encode([x])
         return self.seq_posterior(enc_x)[0]
-
 
     def component_log_density(self, x: Sequence[T]) -> np.ndarray:
         """Evaluate the component-wise log-density for an observation from a hierarchical mixture model.
@@ -151,7 +153,7 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
             x (Sequence[T]): An observation from a hierarchical mixture model.
 
         Returns:
-            Numpy array length of 'num_mixtures'.
+            np.ndarray: Numpy array length of 'num_mixtures'.
 
         """
         n = len(x)
@@ -186,29 +188,26 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
                   in range(self.num_mixtures)]
         return MixtureDistribution(topics, self.w)
 
-    def seq_component_log_density(self, x: Tuple[int, np.ndarray, np.ndarray, E1, Optional[E2]]) -> np.ndarray:
+    def seq_component_log_density(self, x: 'HierarchicalMixtureEncodedDataSequence') -> np.ndarray:
         """Vectorized evaluation of the outer-mixture component-wise log-density for an encoded sequence x.
 
         This returns a numpy array with shape (rv[0], 'num_mixtures').
 
-        Note: This density is a Mixture of Sequence of Mixture, so the data must be bin-counted as last step in code.
-
-        Encoded sequence 'x' is a Tuple of length 5 containing:
-            x[0] (int): Number of independent observations.
-            x[1] (ndarray[int]): Observation sequence index for each value in flattened x.
-            x[2] (ndarray[int]): Length of each observation in x.
-            x[3] (E): Encoded sequence of flattened observed values (has type E).
-            x[4] (Optional[E2]): Encoded sequence of lengths (has type E2).
+        Note:
+            This density is a Mixture of Sequence of Mixture, so the data must be bin-counted as last step in code.
 
         Args:
-            x: Encoded sequence of iid hierarchical mixture model observations.
+            x (HierarchicalMixtureEncodedDataSequence): EncodedDataSequence for Hierarchical mixture observations.
 
         Returns:
-            Numpy array of dimensions 'rv[0]' by 'num_mixtures', containing the log-density for each component of the
-                outer mixture.
+            np.ndarray: Numpy array of dimensions 'rv[0]' by 'num_mixtures', containing the log-density for each
+            component of the outer mixture.
 
         """
-        sz, idx, cnt, enc_data, enc_len = x
+        if not isinstance(x, HierarchicalMixtureEncodedDataSequence):
+            raise Exception('Requires HierarchicalMixtureEncodedDataSequence.')
+
+        sz, idx, cnt, enc_data, enc_len = x.data
         tsz = len(idx)
 
         if (sz > 0) and np.all(cnt == 0):
@@ -243,24 +242,11 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
 
         return rv
 
-    def seq_log_density(self, x: Tuple[int, np.ndarray, np.ndarray, E1, Optional[E2]]) -> np.ndarray:
-        """Vectorized evaluation of the log-density for an encoded sequence of observations in x.
+    def seq_log_density(self, x: 'HierarchicalMixtureEncodedDataSequence') -> np.ndarray:
+        if not isinstance(x, HierarchicalMixtureEncodedDataSequence):
+            raise Exception('Requires HierarchicalMixtureEncodedDataSequence.')
 
-        Encoded sequence 'x' is a Tuple of length 5 containing:
-            x[0] (int): Number of independent observations.
-            x[1] (ndarray[int]): Observation sequence index for each value in flattened x.
-            x[2] (ndarray[int]): Length of each observation in x.
-            x[3] (E): Encoded sequence of flattened observed values (has type E).
-            x[4] (Optional[E2]): Encoded sequence of lengths (has type E2).
-
-        Args:
-            x: Encoded sequence of observations of hierarchical mixture model.
-
-        Returns:
-            Log-density evaluated at each observation in the encoded sequence x.
-
-        """
-        sz, idx, cnt, enc_data, enc_len = x
+        sz, idx, cnt, enc_data, enc_len = x.data
         tsz = len(idx)
 
         # Compute ln p_mat(bag of data | mixture)
@@ -284,24 +270,20 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
 
         return rv
 
-    def seq_posterior(self, x: Tuple[int, np.ndarray, np.ndarray, E1, Optional[E2]]) -> np.ndarray:
+    def seq_posterior(self, x: 'HierarchicalMixtureEncodedDataSequence') -> np.ndarray:
         """Vectorized evaluation of the posterior over each outer-mixture component for an encoded sequence x.
 
-        Encoded sequence 'x' is a Tuple of length 5 containing:
-            x[0] (int): Number of independent observations.
-            x[1] (ndarray[int]): Observation sequence index for each value in flattened x.
-            x[2] (ndarray[int]): Length of each observation in x.
-            x[3] (E): Encoded sequence of flattened observed values (has type E).
-            x[4] (Optional[E2]): Encoded sequence of lengths (has type E2).
-
         Args:
-            x: See above for details.
+            x (HierarchicalMixtureEncodedDataSequence): EncodedDataSequence for Hierarchical mixture observations.
 
         Returns:
-            Numpy array of dimension (x[0], 'num_mixtures').
+            np.ndarray: dimension (x[0], 'num_mixtures') containing posteriors for each observation.
 
         """
-        sz, idx, cnt, enc_data, enc_len = x
+        if not isinstance(x, HierarchicalMixtureEncodedDataSequence):
+            raise Exception('Requires HierarchicalMixtureEncodedDataSequence for seq_posterior().')
+
+        sz, idx, cnt, enc_data, enc_len = x.data
         tsz = len(idx)
 
         # Compute ln p_mat(bag of data | mixture)
@@ -319,19 +301,9 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
         return rv
 
     def sampler(self, seed: Optional[int] = None) -> 'HierarchicalMixtureSampler':
-        """Return HierarchicalMixtureSampler object created from attribute variables."""
         return HierarchicalMixtureSampler(self, seed)
 
     def estimator(self, pseudo_count: Optional[float] = None) -> 'HierarchicalMixtureEstimator':
-        """Create an HierarchicalMixtureEstimator object from attributes variables.
-
-        Args:
-            pseudo_count (Optional[float]): Re-weight sufficient statistics in estimation step of EM.
-
-        Returns:
-            HierarchicalMixtureEstimator object.
-
-        """
         len_est = self.len_dist.estimator(pseudo_count=pseudo_count)
         comp_est = [u.estimator(pseudo_count=pseudo_count) for u in self.topics]
 
@@ -339,25 +311,27 @@ class HierarchicalMixtureDistribution(SequenceEncodableProbabilityDistribution):
                                             pseudo_count=pseudo_count, name=self.name, keys=self.keys)
 
     def dist_to_encoder(self) -> 'HierarchicalMixtureDataEncoder':
-        """Return an HierarchicalMixtureDataEncoder object for encoding sequences of iid observations. """
         topic_encoder = self.topics[0].dist_to_encoder()
         len_encoder = self.len_dist.dist_to_encoder()
         return HierarchicalMixtureDataEncoder(topic_encoder=topic_encoder, len_encoder=len_encoder)
 
 
 class HierarchicalMixtureSampler(DistributionSampler):
+    """HierarchicalMixtureSampler object for sampling from a hierarchical mixture model.
+
+    Attributes:
+        rng (RandomState): RandomState object with seed set is passed as arg.
+        dist (HierarchicalMixtureDistribution): HierarchicalMixtureDistribution instance to sample from.
+        sampler (MixtureDistributionSampler): Convert 'dist' to a MixtureDistribution for sampling.
+
+    """
 
     def __init__(self, dist: HierarchicalMixtureDistribution, seed: Optional[int] = None) -> None:
-        """HierarchicalMixtureSampler object for sampling from a hierarchical mixture model.
+        """HierarchicalMixtureSampler object.
 
         Args:
             dist (HierarchicalMixtureDistribution): HierarchicalMixtureDistribution instance to sample from.
             seed (Optional[int]): Set seed for random number generator used in sampling.
-
-        Attributes:
-            rng (RandomState): RandomState object with seed set is passed as arg.
-            dist (HierarchicalMixtureDistribution): HierarchicalMixtureDistribution instance to sample from.
-            sampler (MixtureDistributionSampler): Convert 'dist' to a MixtureDistribution for sampling.
 
         """
         self.rng = np.random.RandomState(seed)
@@ -365,16 +339,39 @@ class HierarchicalMixtureSampler(DistributionSampler):
         self.sampler = dist.to_mixture().sampler(seed)
 
     def sample(self, size: Optional[int] = None) -> Union[Sequence[Any], Any]:
-        """Returns samples from MixtureSampler."""
         return self.sampler.sample(size=size)
 
 
 class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
+    """HierarchicalMixtureEstimatorAccumulator for accumulating sufficient statistics of Hierarchical Mixture samples.
+
+    Attributes:
+        accumulators (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the topic distributions.
+            Each SequenceEncodableStatisticAccumulator should be compatible with data type T.
+        num_topics (int): Number of topic distributions. Length of accumulators above.
+        num_mixtures (int): Number of outer mixture components.
+        comp_counts (ndarray): Numpy array of shape ('num_mixtures', 'num_topics') for tracking component counts,
+            used to estimate the weights.
+        len_accumulator (Optional[SequenceEncodableStatisticAccumulator]): Optional accumulator object for the
+            length of the topic distributions.
+        name (Optional[str]): Name for object.
+        weight_key (Optional[str]): If set, comp_counts are merged with objects containing matching weight_key.
+        comp_key (Optional[str]): If set, the components of the outer-mixture are merged with objects containing
+            a matching comp_key.
+        _init_rng (bool): False if rng for accumulators has not been set.
+        _topic_rng (Optional[List[RandomState]]): List of RandomState objects for setting seed on topic accumulator
+            initialization.
+        _w_rng (Optional[RandomState]): RandomState for initializing draws from components.
+        _tau_rng (Optional[RandomState]): RandomState for initializing draws from sequence of mixture component.
+        _len_rng (Optional[RandomState]): RandomState for setting seed on length accumulator.
+
+    """
 
     def __init__(self, accumulators: Sequence[SequenceEncodableStatisticAccumulator], num_mixtures: int,
                  len_accumulator: Optional[SequenceEncodableStatisticAccumulator] = NullAccumulator(),
-                 keys: Optional[Tuple[Optional[str], Optional[str]]] = (None, None)) -> None:
-        """
+                 keys: Optional[Tuple[Optional[str], Optional[str]]] = (None, None),
+                 name: Optional[str] = None) -> None:
+        """HierarchicalMixtureEstimatorAccumulator object.
 
         Args:
             accumulators (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the topic distributions.
@@ -384,25 +381,7 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
                 length of the topic distributions.
             keys (Optional[Tuple[Optional[str], Optional[str]]]): Keys for merging sufficient statistics of
                 weights and topics with matching objects containing matching keys.
-
-        Attributes:
-            accumulators (Sequence[SequenceEncodableStatisticAccumulator]): Accumulators for the topic distributions.
-                Each SequenceEncodableStatisticAccumulator should be compatible with data type T.
-            num_topics (int): Number of topic distributions. Length of accumulators above.
-            num_mixtures (int): Number of outer mixture components.
-            comp_counts (ndarray): Numpy array of shape ('num_mixtures', 'num_topics') for tracking component counts,
-                used to estimate the weights.
-            len_accumulator (Optional[SequenceEncodableStatisticAccumulator]): Optional accumulator object for the
-                length of the topic distributions.
-            weight_key (Optional[str]): If set, comp_counts are merged with objects containing matching weight_key.
-            comp_key (Optional[str]): If set, the components of the outer-mixture are merged with objects containing
-                a matching comp_key.
-            _init_rng (bool): False if rng for accumulators has not been set.
-            _topic_rng (Optional[List[RandomState]]): List of RandomState objects for setting seed on topic accumulator
-                initialization.
-            _w_rng (Optional[RandomState]): RandomState for initializing draws from components.
-            _tau_rng (Optional[RandomState]): RandomState for initializing draws from sequence of mixture component.
-            _len_rng (Optional[RandomState]): RandomState for setting seed on length accumulator.
+            name (Optional[str]): Name for object.
 
         """
         self.accumulators = accumulators
@@ -414,7 +393,7 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
         self.weight_key = keys_temp[0]
         self.comp_key = keys_temp[1]
 
-        ### Initializer seeds
+        # Initializer seeds
         self._init_rng: bool = False
         self._topic_rng: Optional[List[RandomState]] = None
         self._w_rng: Optional[RandomState] = None
@@ -422,31 +401,9 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
         self._len_rng: Optional[RandomState] = None
 
     def update(self, x, weight, estimate) -> None:
-        """Update sufficient statistics with an observation x.
-
-        Args:
-            x (Sequence[T]): An observation from hierarchical mixture mode with data type T.
-            weight (float): Observation weight.
-            estimate (HierarchicalMixtureDistribution): Previous estimate from EM algorithm.
-
-        Returns:
-            None.
-
-        """
         pass
 
     def _rng_initialize(self, rng: RandomState) -> None:
-        """Initialize RandomState objects for accumulators from rng.
-
-        This function exists to ensure consistency between initialize() and seq_initialize() functions.
-
-        Args:
-            rng (RandomState): Used to generate seed value for _rng_acc member variable.
-
-        Returns:
-            None.
-
-        """
         self._len_rng = RandomState(seed=rng.randint(maxrandint))
         self._w_rng = RandomState(seed=rng.randint(maxrandint))
         self._tau_rng = RandomState(seed=rng.randint(maxrandint))
@@ -454,55 +411,25 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
         self._init_rng = True
 
     def initialize(self, x: Sequence[T], weight: float, rng: RandomState) -> None:
-        """Initialize sufficient statistics with an observation x.
+        pass
+        # if not self._init_rng:
+        #     self._rng_initialize(rng)
+        #
+        # idx1 = self._w_rng.choice(self.num_mixtures)
+        #
+        # for j in range(len(x)):
+        #     idx2 = self._tau_rng.choice(self.num_topics)
+        #
+        #     for i in range(self.num_topics):
+        #         w = weight if i == idx2 else 0.0
+        #         self.accumulators[i].initialize(x[j], w, self._topic_rng[i])
+        #         self.comp_counts[idx1, i] += w
+        #
+        # self.len_accumulator.initialize(len(x), weight, self._len_rng)
 
-        Args:
-            x (Sequence[T]): An observation from hierarchical mixture mode with data type T.
-            weight (float): Observation weight.
-            rng (RandomState): RandomState object for initializing sufficient statistics.
-
-        Returns:
-            None.
-
-        """
-        if not self._init_rng:
-            self._rng_initialize(rng)
-
-        idx1 = self._w_rng.choice(self.num_mixtures)
-
-        for j in range(len(x)):
-            idx2 = self._tau_rng.choice(self.num_topics)
-
-            for i in range(self.num_topics):
-                w = weight if i == idx2 else 0.0
-                self.accumulators[i].initialize(x[j], w, self._topic_rng[i])
-                self.comp_counts[idx1, i] += w
-
-        self.len_accumulator.initialize(len(x), weight, self._len_rng)
-
-    def seq_initialize(self, x: Tuple[int, np.ndarray, np.ndarray, E1, Optional[E2]], weights: np.ndarray,
-                       rng: RandomState) -> None:
-        """Vectorized initialization of sufficient statistics from an encoded sequence of observations in x.
-
-        Note: Calls _rng_initialize() to ensure equivalence between seq_initialize() and initialize().
-
-        Encoded sequence 'x' is a Tuple of length 5 containing:
-            x[0] (int): Number of independent observations.
-            x[1] (ndarray[int]): Observation sequence index for each value in flattened x.
-            x[2] (ndarray[int]): Length of each observation in x.
-            x[3] (E): Encoded sequence of flattened observed values (has type E).
-            x[4] (Optional[E2]): Encoded sequence of lengths (has type E2).
-
-        Args:
-            x: Encoded sequence of observations of hierarchical mixture model.
-            weights (ndarray): Weights for observations.
-            rng (RandomState): RandomState object for initializing sufficient statistics.
-
-        Returns:
-            None.
-
-        """
-        sz, idx, cnt, enc_data, enc_len = x
+    def seq_initialize(self, x: 'HierarchicalMixtureEncodedDataSequence', weights: np.ndarray, rng: RandomState) \
+            -> None:
+        sz, idx, cnt, enc_data, enc_len = x.data
         tsz = len(idx)
 
         if not self._init_rng:
@@ -523,27 +450,9 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
 
         self.len_accumulator.seq_initialize(enc_len, weights, self._len_rng)
 
-    def seq_update(self, x: Tuple[int, np.ndarray, np.ndarray, E1, Optional[E2]], weights: np.ndarray,
+    def seq_update(self, x: 'HierarchicalMixtureEncodedDataSequence', weights: np.ndarray,
                    estimate: HierarchicalMixtureDistribution) -> None:
-        """Vectorized update of sufficient statistics from an encoded sequence x.
-
-        Encoded sequence 'x' is a Tuple of length 5 containing:
-            x[0] (int): Number of independent observations.
-            x[1] (ndarray[int]): Observation sequence index for each value in flattened x.
-            x[2] (ndarray[int]): Length of each observation in x.
-            x[3] (E): Encoded sequence of flattened observed values (has type E).
-            x[4] (Optional[E2]): Encoded sequence of lengths (has type E2).
-
-        Args:
-            x: Encoded sequence of observations of hierarchical mixture model.
-            weights (ndarray): Weights for observations.
-            estimate (HierarchicalMixtureDistribution): Previous estimate from EM algorithm.
-
-        Returns:
-            None.
-
-        """
-        sz, idx, cnt, enc_data, enc_len = x
+        sz, idx, cnt, enc_data, enc_len = x.data
         tsz = len(idx)
 
         ll_mat = np.zeros((tsz, self.num_topics))
@@ -596,21 +505,8 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
             len_est = None if estimate is None else estimate.len_dist
             self.len_accumulator.seq_update(enc_len, weights, len_est)
 
-    def combine(self, suff_stat: Tuple[np.ndarray, Tuple[SS1, ...], Optional[SS2]]) -> 'HierarchicalMixtureEstimatorAccumulator':
-        """Combine the sufficient statistics of 'suff_stat; with attribute variables.
-
-        Arg suff_stat is a Tuple of length 3 containing,
-            suff_stat[0] (ndarray[float]): Aggregated component counts with shape (num_mixtures, num_topics).
-            suff_stat[1] (Tuple[SS1,...]): Tuple of 'num_topics' sufficient statistics for the topics.
-            suff_stat[2] (Optional[SS2]): Optional sufficient statistic for length accumulator.
-
-        Args:
-            suff_stat (Tuple[np.ndarray, Tuple[SS1, ...], Optional[SS2]]): See above for details.
-
-        Returns:
-            HierarchicalMixtureEstimatorAccumulator object.
-
-        """
+    def combine(self, suff_stat: Tuple[np.ndarray, Tuple[SS1, ...], Optional[SS2]]) \
+            -> 'HierarchicalMixtureEstimatorAccumulator':
         self.comp_counts += suff_stat[0]
         for i in range(self.num_topics):
             self.accumulators[i].combine(suff_stat[1][i])
@@ -620,24 +516,11 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
         return self
 
     def value(self) -> Tuple[np.ndarray, Tuple[Any, ...], Optional[Any]]:
-        """Returns sufficient statistics of type Tuple[np.ndarray, Tuple[SS1,...], Optional[SS2]]."""
+
         return self.comp_counts, tuple([u.value() for u in self.accumulators]), self.len_accumulator.value()
 
-    def from_value(self, x: Tuple[np.ndarray, Tuple[SS1, ...], Optional[SS2]]) -> 'HierarchicalMixtureEstimatorAccumulator':
-        """Set the attribute variables for sufficient statistics to arg 'x'.
-
-        Arg 'x' is a Tuple of length 3 containing,
-            x[0] (ndarray[float]): Aggregated component counts with shape (num_mixtures, num_topics).
-            x[1] (Tuple[SS1,...]): Tuple of 'num_topics' sufficient statistics for the topics.
-            x[2] (Optional[SS2]): Optional sufficient statistic for length accumulator.
-
-        Args:
-            x (Tuple[np.ndarray, Tuple[SS1, ...], Optional[SS2]]): See above for details.
-
-        Returns:
-            HierarchicalMixtureEstimatorAccumulator object.
-
-        """
+    def from_value(self, x: Tuple[np.ndarray, Tuple[SS1, ...], Optional[SS2]]) \
+            -> 'HierarchicalMixtureEstimatorAccumulator':
         self.comp_counts = x[0]
         for i in range(self.num_topics):
             self.accumulators[i].from_value(x[1][i])
@@ -647,20 +530,6 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
         return self
 
     def key_merge(self, stats_dict: Dict[str, Any]) -> None:
-        """Merge sufficient statistics of object instance with matching keys in stats_dict.
-
-        Merges comp_counts if weight_key is set and found in stats_dict.
-        Merges topic accumulators if 'comp_key' is set and found in stats_dict.
-
-        Calls key_merge() of the length accumulator.
-
-        Args:
-            stats_dict (Dict[str, Any]): Dictionary mapping keys to corresponding sufficient statistics.
-
-        Returns:
-            None.
-
-        """
         if self.weight_key is not None:
             if self.weight_key in stats_dict:
                 stats_dict[self.weight_key] += self.comp_counts
@@ -681,20 +550,6 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
         self.len_accumulator.key_merge(stats_dict)
 
     def key_replace(self, stats_dict: Dict[str, Any]) -> None:
-        """Replace the sufficient statistics of object instance with those containing matching keys in 'stats_dict'.
-
-        Replaces comp_counts if weight_key is set and found in stats_dict.
-        Replaces topic accumulators if 'comp_key' is set and found in stats_dict.
-
-        Calls key_replace() of the length accumulator.
-
-        Args:
-            stats_dict (Dict[str, Any]): Dictionary mapping keys to corresponding sufficient statistics.
-
-        Returns:
-            None.
-
-        """
         if self.weight_key is not None:
             if self.weight_key in stats_dict:
                 self.comp_counts = stats_dict[self.weight_key]
@@ -710,34 +565,39 @@ class HierarchicalMixtureEstimatorAccumulator(SequenceEncodableStatisticAccumula
         self.len_accumulator.key_replace(stats_dict)
 
     def acc_to_encoder(self) -> 'HierarchicalMixtureDataEncoder':
-        """Return an HierarchicalMixtureDataEncoder object for encoding sequences of iid observations. """
         topic_encoder = self.accumulators[0].acc_to_encoder()
         len_encoder = self.len_accumulator.acc_to_encoder()
         return HierarchicalMixtureDataEncoder(topic_encoder=topic_encoder, len_encoder=len_encoder)
 
 
 class HierarchicalMixtureEstimatorAccumulatorFactory(StatisticAccumulatorFactory):
+    """HierarchicalMixtureEstimatorAccumulatorFactory object for creating HierarchicalMixtureEstimatorAccumulator
+        objects.
+
+    Attributes:
+        factories (Sequence[StatisticAccumulatorFactory]): StatisticAccumulatorFactory objects for the topics.
+        num_mixtures (int): Number of outer mixture components.
+        dim (int): Number of topics.
+        len_factory (StatisticAccumulatorFactory): StatisticAccumulatorFactory for the length distribution.
+            Defaults to the NullAccumulatorFactory.
+        name (Optional[str]): Name for object. 
+        keys (Optional[Tuple[Optional[str], Optional[str]]]): Keys for merging sufficient statistics of weights and
+            topics with matching objects containing matching keys.
+
+    """
 
     def __init__(self, factories: Sequence[StatisticAccumulatorFactory], num_mixtures: int,
                  len_factory: Optional[StatisticAccumulatorFactory] = NullAccumulatorFactory(),
+                 name: Optional[str] = None,
                  keys: Optional[Tuple[Optional[str], Optional[str]]] = (None, None)):
-        """HierarchicalMixtureEstimatorAccumulatorFactory object for creating HierarchicalMixtureEstimatorAccumulator
-            objects.
+        """HierarchicalMixtureEstimatorAccumulatorFactory object.
 
         Args:
             factories (Sequence[StatisticAccumulatorFactory]): StatisticAccumulatorFactory objects for the topics.
             num_mixtures (int): Number of outer mixture components.
             len_factory (Optional[StatisticAccumulatorFactory]): Optional StatisticAccumulatorFactory for the length
                 distribution.
-            keys (Optional[Tuple[Optional[str], Optional[str]]]): Keys for merging sufficient statistics of weights and
-                topics with matching objects containing matching keys.
-
-        Attributes:
-            factories (Sequence[StatisticAccumulatorFactory]): StatisticAccumulatorFactory objects for the topics.
-            num_mixtures (int): Number of outer mixture components.
-            dim (int): Number of topics.
-            len_factory (StatisticAccumulatorFactory): StatisticAccumulatorFactory for the length distribution.
-                Defaults to the NullAccumulatorFactory.
+            name (Optional[str]): Name for object. 
             keys (Optional[Tuple[Optional[str], Optional[str]]]): Keys for merging sufficient statistics of weights and
                 topics with matching objects containing matching keys.
 
@@ -746,14 +606,40 @@ class HierarchicalMixtureEstimatorAccumulatorFactory(StatisticAccumulatorFactory
         self.num_mixtures = num_mixtures
         self.dim = len(factories)
         self.len_factory = len_factory if len_factory is not None else NullAccumulatorFactory()
+        self.name = name
         self.keys = keys if keys is not None else (None, None)
 
     def make(self) -> 'HierarchicalMixtureEstimatorAccumulator':
-        """Returns an HierarchicalMixtureEstimatorAccumulator object from attributes variables."""
-        return HierarchicalMixtureEstimatorAccumulator([self.factories[i].make() for i in range(self.dim)],
-                                                       self.num_mixtures, self.len_factory.make(), self.keys)
+        return HierarchicalMixtureEstimatorAccumulator(
+            accumulators=[self.factories[i].make() for i in range(self.dim)],
+            num_mixtures=self.num_mixtures, 
+            len_accumulator=self.len_factory.make(), 
+            name=self.name, 
+            keys=self.keys)
+
 
 class HierarchicalMixtureEstimator(ParameterEstimator):
+    """HierarchicalMixtureEstimator object for estimating hierarchical mixture distribution for aggregated
+        sufficient statistics.
+
+    Note: If pseudo_count is passed, the mixture weights are re-weighted in estimation. If attribute suff_stat
+    is set, a suff_stat is re-weighted and combined with new sufficient statistics in estimation.
+
+    Attributes:
+        num_components (int): Number of topic distributions (inner-mixture).
+        num_mixtures (int): Number of outer-mixture components.
+        estimators (Sequence[ParameterEstimator]): ParameterEstimator objects for the topics.
+        pseudo_count (Optional[float]): Re-weight 'suff_stat' above in estimation.
+        suff_stat (np.ndarray): 2-d numpy array of dimension (num_components, num_mixtures). Represents the
+            inner-mixture weights.
+        len_estimator (Optional[ParameterEstimator]): Estimator for the length of inner mixture sequences.
+        keys (Optional[Tuple[Optional[str], Optional[str]]]): Keys for weights and topics, passed to accumulator
+            factory with call to 'accumulator_factory()'.
+        len_dist (Optional[SequenceEncodableProbabilityDistribution]): Fix the length on inner-mixture sequence
+            distribution.
+        name (Optional[str]): Name for object instance.
+
+    """
 
     def __init__(self, estimators: Sequence[ParameterEstimator], num_mixtures: int,
                  len_estimator: Optional[ParameterEstimator] = NullEstimator(),
@@ -762,11 +648,7 @@ class HierarchicalMixtureEstimator(ParameterEstimator):
                  pseudo_count: Optional[float] = None,
                  name: Optional[str] = None,
                  keys: Optional[Tuple[Optional[str], Optional[str]]] = (None, None)) -> None:
-        """HierarchicalMixtureEstimator object for estimating hierarchical mixture distribution for aggregated
-            sufficient statistics.
-
-        Note: If pseudo_count is passed, the mixture weights are re-weighted in estimation. If attribute suff_stat
-        is set, a suff_stat is re-weighted and combined with new sufficient statistics in estimation.
+        """HierarchicalMixtureEstimator object.
 
         Args:
             estimators (Sequence[ParameterEstimator]): ParameterEstimator objects for the topics.
@@ -777,24 +659,19 @@ class HierarchicalMixtureEstimator(ParameterEstimator):
             suff_stat (np.ndarray): 2-d numpy array of dimension (num_components, num_mixtures). Represents the
                 inner-mixture weights.
             pseudo_count (Optional[float]): Re-weight 'suff_stat' above in estimation.
-            name (Optional[str]): Set a name to object instnace.
+            name (Optional[str]): Set a name to object instance.
             keys (Optional[Tuple[Optional[str], Optional[str]]]): Set keys for weights and topics.
 
-        Attributes:
-            num_components (int): Number of topic distributions (inner-mixture).
-            num_mixtures (int): Number of outer-mixture components.
-            estimators (Sequence[ParameterEstimator]): ParameterEstimator objects for the topics.
-            pseudo_count (Optional[float]): Re-weight 'suff_stat' above in estimation.
-            suff_stat (np.ndarray): 2-d numpy array of dimension (num_components, num_mixtures). Represents the
-                inner-mixture weights.
-            len_estimator (Optional[ParameterEstimator]): Estimator for the length of inner mixture sequences.
-            keys (Optional[Tuple[Optional[str], Optional[str]]]): Keys for weights and topics, passed to accumulator
-                factory with call to 'accumulator_factory()'.
-            len_dist (Optional[SequenceEncodableProbabilityDistribution]): Fix the length on inner-mixture sequence
-                distribution.
-            name (Optional[str]): Name for object instance.
-
         """
+        if (
+            isinstance(keys, tuple)
+            and len(keys) == 2
+            and all(isinstance(k, (str, type(None))) for k in keys)
+        ):
+            self.keys = keys
+        else:
+            raise TypeError("HierarchialMixtureEstimator requires keys (Tuple[Optional[str], Optional[str]]).")
+        
         self.num_components = len(estimators)
         self.num_mixtures = num_mixtures
         self.estimators = estimators
@@ -806,23 +683,17 @@ class HierarchicalMixtureEstimator(ParameterEstimator):
         self.name = name
 
     def accumulator_factory(self) -> 'HierarchicalMixtureEstimatorAccumulatorFactory':
-        """Create an HierarchicalMixtureEstimatorAccumulator from object instance."""
         est_factories = [u.accumulator_factory() for u in self.estimators]
         len_factory = self.len_estimator.accumulator_factory()
-        return HierarchicalMixtureEstimatorAccumulatorFactory(est_factories, self.num_mixtures, len_factory, self.keys)
+        return HierarchicalMixtureEstimatorAccumulatorFactory(
+            factories=est_factories, 
+            num_mixtures=self.num_mixtures, 
+            len_factory=len_factory, 
+            name=self.name,
+            keys=self.keys)
 
     def estimate(self, nobs: Optional[float], suff_stat: Tuple[np.ndarray, SS1, Optional[SS2]]) \
             -> 'HierarchicalMixtureDistribution':
-        """Estimate HierarchicalMixtureDistribution from aggregated sufficient statistics.
-
-        Args:
-            nobs (Optional[float]): Number of observations used in accumulation of 'suff_stat'.
-            suff_stat:
-
-        Returns:
-            HierarchicalMixtureDistribution object.
-
-        """
         num_components = self.num_components
         num_mixtures = self.num_mixtures
         counts, comp_suff_stats, len_suff_stats = suff_stat
@@ -855,16 +726,19 @@ class HierarchicalMixtureEstimator(ParameterEstimator):
         return HierarchicalMixtureDistribution(components, w, taus, len_dist=len_dist, name=self.name, keys=self.keys)
 
 class HierarchicalMixtureDataEncoder(DataSequenceEncoder):
+    """HierarchicalMixtureDataEncoder object for encoding sequences of iid hierarchical mixture observations.
+
+    Attributes:
+        topic_encoder (DataSequenceEncoder): DataSequenceEncoder for topic distributions. Must be compatible with
+            data type T.
+        len_encoder (DataSequenceEncoder): DataSequenceEncoder for length of sequences.
+
+    """
 
     def __init__(self, topic_encoder: DataSequenceEncoder, len_encoder: DataSequenceEncoder) -> None:
-        """HierarchicalMixtureDataEncoder object for encoding sequences of iid hierarchical mixture observations.
+        """HierarchicalMixtureDataEncoder object.
 
         Args:
-            topic_encoder (DataSequenceEncoder): DataSequenceEncoder for topic distributions. Must be compatible with
-                data type T.
-            len_encoder (DataSequenceEncoder): DataSequenceEncoder for length of sequences.
-
-        Attributes:
             topic_encoder (DataSequenceEncoder): DataSequenceEncoder for topic distributions. Must be compatible with
                 data type T.
             len_encoder (DataSequenceEncoder): DataSequenceEncoder for length of sequences.
@@ -874,45 +748,17 @@ class HierarchicalMixtureDataEncoder(DataSequenceEncoder):
         self.len_encoder = len_encoder
 
     def __str__(self) -> str:
-        """Return string representation of object instance."""
         rv = 'HierarchicalMixtureDataEncoder(topic_encoder=' + str(self.topic_encoder) + ','
         rv += 'len_encoder=' + str(self.len_encoder) + ')'
         return rv
 
     def __eq__(self, other: object) -> bool:
-        """Check if object is equivalent to instance of HierarchicalMixtureDataEncoder.
-
-        Note: topic and length encoder objects must be equivalent.
-
-        Args:
-            other (object): Object to compare to object instance.
-
-        Returns:
-            True if other is equivalent.
-
-        """
         if isinstance(other, HierarchicalMixtureDataEncoder):
             return other.topic_encoder == self.topic_encoder and other.len_encoder == self.len_encoder
         else:
             return False
 
-    def seq_encode(self, x: Sequence[Sequence[T]]) -> Tuple[int, np.ndarray, np.ndarray, Any, Optional[Any]]:
-        """Encode a sequence of iid observations from a hierarchical mixture model.
-
-        Returns 'rv' as a Tuple of length 5 containing:
-            rv[0] (int): Number of independent observations.
-            rv[1] (ndarray[int]): Observation sequence index for each value in flattened x.
-            rv[2] (ndarray[int]): Length of each observation in x.
-            rv[3] (E): Encoded sequence of flattened observed values (has type E).
-            rv[4] (Optional[E2]): Encoded sequence of lengths (has type E2).
-
-        Args:
-            x (Sequence[Sequence[T]]): Sequence of hierarchical mixture model observations.
-
-        Returns:
-            See above.
-
-        """
+    def seq_encode(self, x: Sequence[Sequence[T]]) -> 'HierarchicalMixtureEncodedDataSequence':
         sx = []
         idx = []
         cnt = []
@@ -928,6 +774,12 @@ class HierarchicalMixtureDataEncoder(DataSequenceEncoder):
 
         enc_data = self.topic_encoder.seq_encode(sx)
 
-        return len(x), idx, cnt, enc_data, enc_len
+        return HierarchicalMixtureEncodedDataSequence(data=(len(x), idx, cnt, enc_data, enc_len))
 
+class HierarchicalMixtureEncodedDataSequence(EncodedDataSequence):
 
+    def __init__(self, data: Tuple[int, np.ndarray, np.ndarray, EncodedDataSequence, EncodedDataSequence]):
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'HierarchicalMixtureDataEncoder(data={self.data})'

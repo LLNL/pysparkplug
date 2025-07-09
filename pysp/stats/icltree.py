@@ -18,50 +18,61 @@ from numpy.random import RandomState
 from scipy.sparse.csgraph import minimum_spanning_tree, breadth_first_order
 
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
-    ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory
+    ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory, EncodedDataSequence
 
 from typing import Sequence, Tuple, Any, List, Dict, Union, Optional
 
 
 class ICLTreeDistribution(SequenceEncodableProbabilityDistribution):
+    """ICLTreeDistribution object for integer Chow Liu tree distribution.
+
+    Attributes:
+        feature_order (Sequence[int]): Ordering of features. If None, ordering is assumed as entered.
+        dependency_list (List[ Tuple[int, Tuple[int, Optional[int]]]]): List of Tuples containing features
+            order id and Tuple of feature and feature dep.
+        conditional_log_densities (Union[Sequence[float], np.ndarray]): Conditional log densities for each features'
+            dependency split.
+        conditional_densities (np.ndarray): Conditional densities as numpy array.
+        num_features (int): Total number of features.
+        name (Optional[str]): Name for object instance.
+        keys (Optional[str]): Keys for parameters of model.
+
+    """
 
     def __init__(self, dependency_list: List[Tuple[int, Optional[int]]],
                  conditional_log_densities: Union[Sequence[float], np.ndarray],
-                 feature_order: Optional[Sequence[int]] = None, name: Optional[str] = None) -> None:
-        """ICLTreeDistribution object for integer Chow Liu tree distribution.
+                 feature_order: Optional[Sequence[int]] = None, 
+                 name: Optional[str] = None,
+                 keys: Optional[str] = None) -> None:
+        """ICLTreeDistribution object.
 
         Args:
             dependency_list (List[Tuple[int, Optional[int]]]): List of Tuples containing node id and parent dependence
                 if any dependence is present.
-            conditional_log_densities (Union[Sequence[float], np.ndarray]): Conditional log densities for each features
+            conditional_log_densities (Union[Sequence[float], np.ndarray]): Conditional log densities for each features'
                 dependency split.
             feature_order (Optional[Sequence[int]]): Ordering of features. If None, ordering is assumed as entered.
             name (Optional[str]): Set name to object.
-
-        Attributes:
-            feature_order (Sequence[int]): Ordering of features. If None, ordering is assumed as entered.
-            dependency_list (List[ Tuple[int, Tuple[int, Optional[int]]]]): List of Tuples containing features
-                order id and Tuple of feature and feature dep.
-            conditional_log_densities (Union[Sequence[float], np.ndarray]): Conditional log densities for each features
-                dependency split.
-            conditional_densities (np.ndarray): Conditional densities as numpy array.
-            num_features (int): Total number of features.
-            name (Optional[str]): Name for object isntance.
+            keys (Optional[str]): Keys for parameters of model.
 
         """
+
         self.feature_order = range(len(dependency_list)) if feature_order is None else feature_order
         self.dependency_list = list(zip(self.feature_order, dependency_list))
+                                #dependency_list[i] for i in self.feature_order] # list(zip(self.feature_order, dependency_list))
         self.conditional_log_densities = conditional_log_densities
         self.conditional_densities = [np.exp(u) for u in conditional_log_densities]
         self.num_features = len(dependency_list)
         self.name = name
+        self.keys = keys
 
     def __str__(self) -> str:
         f1 = ','.join([str(u[1]) for u in self.dependency_list])
         f3 = ','.join([str(u[0]) for u in self.dependency_list])
         f2 = ['[' + ','.join(map(str, u.flatten())) + ']' for u in self.conditional_log_densities]
-        f4 = ','.join(repr(self.name))
-        return 'ICLTreeDistribution([%s], [%s], feature_order=[%s], name=%s)' % (f1, f2, f3, f4)
+        f4 = repr(self.name)
+        f5 = repr(self.keys)
+        return 'ICLTreeDistribution([%s], [%s], feature_order=[%s], name=%s, keys=%s)' % (f1, f2, f3, f4, f5)
 
     def density(self, x: Union[Sequence[int], np.ndarray]) -> float:
         return np.exp(self.log_density(x))
@@ -76,13 +87,16 @@ class ICLTreeDistribution(SequenceEncodableProbabilityDistribution):
 
         return rv
 
-    def seq_log_density(self, x: np.ndarray) -> np.ndarray:
-        rv = np.zeros(x.shape[0])
+    def seq_log_density(self, x: 'ICLTreeEncodedDataSequence') -> np.ndarray:
+        if not isinstance(x, ICLTreeEncodedDataSequence):
+            raise Exception('Requires ICLTreeEncodedDataSequence.')
+
+        rv = np.zeros(x.data.shape[0])
         for i, (j, k) in enumerate(self.dependency_list):
             if k is None:
-                rv += self.conditional_log_densities[i][x[:, j]]
+                rv += self.conditional_log_densities[i][x.data[:, j]]
             else:
-                rv += self.conditional_log_densities[i][x[:, k], x[:, j]]
+                rv += self.conditional_log_densities[i][x.data[:, k], x.data[:, j]]
 
         return rv
 
@@ -90,15 +104,29 @@ class ICLTreeDistribution(SequenceEncodableProbabilityDistribution):
         return ICLTreeSampler(self, seed)
 
     def estimator(self, pseudo_count: Optional[float] = None) -> 'ICLTreeEstimator':
-        return ICLTreeEstimator(name=self.name)
+        return ICLTreeEstimator(name=self.name, keys=self.keys)
 
     def dist_to_encoder(self) -> 'ICLTreeDataEncoder':
         return ICLTreeDataEncoder()
 
 
 class ICLTreeSampler(DistributionSampler):
+    """ICLTreeSampler for sampling iid ICL Tree sequences
+
+    Attributes:
+          rng (RandomState): RandomState for setting sampling seed.
+          dist (ICLTreeDistribution): ICL Tree distribution to sample from.
+
+    """
 
     def __init__(self, dist: ICLTreeDistribution, seed: Optional[int] = None) -> None:
+        """ICLTreeSampler object.
+
+        Args:
+              dist (ICLTreeDistribution): ICL Tree distribution to sample from.
+              seed (Optional[int]): Seed passed to random number generator.
+
+        """
         self.rng = RandomState(seed)
         self.dist = dist
 
@@ -106,9 +134,7 @@ class ICLTreeSampler(DistributionSampler):
 
         if size is None:
             rv = [None] * self.dist.num_features
-
-            for i, (j, k) in enumerate(self.dist.dependency_list):
-
+            for i, (j, k) in self.dist.dependency_list:
                 if k is None:
                     pmat = self.dist.conditional_densities[i]
                 else:
@@ -169,20 +195,20 @@ class ICLTreeAccumulator(SequenceEncodableStatisticAccumulator):
         for i in range(self.num_features):
             self.counts[i, ff, xx[i], xx] += weight
 
-    def seq_update(self, x: np.ndarray, weights: np.ndarray, estimate: Optional[ICLTreeDistribution]) -> None:
+    def seq_update(self, x: 'ICLTreeEncodedDataSequence', weights: np.ndarray, estimate: Optional[ICLTreeDistribution]) -> None:
 
-        max_x = np.max(x)
+        max_x = np.max(x.data)
 
         if (self.counts is None) or (self.num_states <= max_x):
-            self._expand_states(max_x + 1, x.shape[1])
+            self._expand_states(max_x + 1, x.data.shape[1])
 
         num_states = self.num_states
 
         for i in range(self.num_features):
-            self.marginal_counts[i, :] += np.bincount(x[:, i], weights=weights, minlength=num_states)
+            self.marginal_counts[i, :] += np.bincount(x.data[:, i], weights=weights, minlength=num_states)
 
             for j in range(i + 1, self.num_features):
-                joint_idx = x[:, i] * num_states + x[:, j]
+                joint_idx = x.data[:, i] * num_states + x.data[:, j]
                 joint_cnt = np.bincount(joint_idx, weights=weights, minlength=(num_states * num_states))
                 joint_cnt = np.reshape(joint_cnt, (num_states, num_states))
 
@@ -191,7 +217,7 @@ class ICLTreeAccumulator(SequenceEncodableStatisticAccumulator):
     def initialize(self, x: Union[Sequence[int], np.ndarray], weight: float, rng: Optional[RandomState]) -> None:
         self.update(x, weight, None)
 
-    def seq_initialize(self, x: np.ndarray, weights: np.ndarray, rng: Optional[RandomState]) -> None:
+    def seq_initialize(self, x: 'ICLTreeEncodedDataSequence', weights: np.ndarray, rng: Optional[RandomState]) -> None:
         self.seq_update(x, weights, None)
 
     def combine(self, suff_stat: Tuple[int, int, np.ndarray, np.ndarray]) -> 'ICLTreeAccumulator':
@@ -345,6 +371,7 @@ class ICLTreeEstimator(ParameterEstimator):
 
 
 class ICLTreeDataEncoder(DataSequenceEncoder):
+    """ICLTreeDataEncoder object for encoding sequences of iid ICL observations. """
 
     def __str__(self) -> str:
         return 'ICLTreeDataEncoder'
@@ -352,9 +379,29 @@ class ICLTreeDataEncoder(DataSequenceEncoder):
     def __eq__(self, other: object) -> bool:
         return isinstance(other, ICLTreeDataEncoder)
 
-    def seq_encode(self, x: Union[List[int], np.ndarray]) -> np.ndarray:
-        return np.asarray(x, dtype=int)
+    def seq_encode(self, x: Union[List[int], np.ndarray]) -> 'ICLTreeEncodedDataSequence':
+        return ICLTreeEncodedDataSequence(data=np.asarray(x, dtype=int))
 
+
+class ICLTreeEncodedDataSequence(EncodedDataSequence):
+    """ICLTreeEncodedDataSequence for vectorized function calls.
+
+    Attributes:
+        data (np.ndarray): Numpy array of observations.
+
+    """
+
+    def __init__(self, data: np.ndarray):
+        """ICLTreeEncodedDataSequence object.
+
+        Args:
+            data (np.ndarray): Numpy array of observations.
+
+        """
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'ICLTreeEncodedDataSequence(data={self.data})'
 
 
 

@@ -4,14 +4,13 @@ from numpy.random import RandomState
 
 from pysp.arithmetic import *
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
-    ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory
+    ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory, EncodedDataSequence
 from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
     NullAccumulatorFactory
 from typing import Sequence, Optional, Union, Any, Tuple, List, TypeVar, Dict
 
 T = Tuple[Union[Sequence[int], np.ndarray], Union[Sequence[int], np.ndarray]]
-E1 = TypeVar('E1') ## encoded type for init
-E = Tuple[int, np.ndarray, np.ndarray, np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray], Optional[E1]]
+
 SS1 = TypeVar('SS1') ## suff-stat of init_dist
 
 
@@ -19,7 +18,8 @@ class IntegerStepBernoulliEditDistribution(SequenceEncodableProbabilityDistribut
 
     def __init__(self, log_edit_pmat: Union[Sequence[Tuple[float, float]], np.ndarray],
                  init_dist: Optional[SequenceEncodableProbabilityDistribution] = NullDistribution,
-                 name: Optional[str] = None) -> None:
+                 name: Optional[str] = None,
+                 keys:  Optional[str] = None) -> None:
         num_vals = len(log_edit_pmat)
         self.name = name
         self.init_dist = init_dist if init_dist is not None else NullDistribution()
@@ -41,12 +41,15 @@ class IntegerStepBernoulliEditDistribution(SequenceEncodableProbabilityDistribut
             np.isfinite(self.log_edit_pmat[:, 0]), 0].sum()  # sum [ln p_mat(missing | missing)]
         self.log_dvec = self.log_edit_pmat[:, 1:] - self.log_edit_pmat[:, 0,
                                                     None]  # ln p_mat (?? | ??) - ln p_mat(missing | missing)
+        self.keys = keys
 
     def __str__(self) -> str:
         s1 = repr(list(map(list, self.orig_log_edit_pmat)))
         s2 = repr(self.init_dist)
         s3 = repr(self.name)
-        return 'IntegerStepBernoulliEditDistribution(%s, init_dist=%s, name=%s)' % (s1, s2, s3)
+        s4 = repr(self.keys)
+
+        return 'IntegerStepBernoulliEditDistribution(%s, init_dist=%s, name=%s, keys=%s)' % (s1, s2, s3, s4)
 
     def density(self, x: T) -> float:
         return exp(self.log_density(x))
@@ -71,8 +74,11 @@ class IntegerStepBernoulliEditDistribution(SequenceEncodableProbabilityDistribut
 
         return rv
 
-    def seq_log_density(self, x: E) -> np.ndarray:
-        sz, idx, xs, ys, ym, init_enc = x
+    def seq_log_density(self, x: 'IntegerStepBernoulliEncodedDataSequence') -> np.ndarray:
+        if not isinstance(x, IntegerStepBernoulliEncodedDataSequence):
+            raise Exception("IntegerStepBernoulliEditEncodedDataSequence required for seq_log_density().")
+
+        sz, idx, xs, ys, ym, init_enc = x.data
         rv = np.bincount(idx, weights=self.log_dvec[xs, ys], minlength=sz)
         rv += self.log_nsum
 
@@ -84,7 +90,8 @@ class IntegerStepBernoulliEditDistribution(SequenceEncodableProbabilityDistribut
         return IntegerStepBernoulliEditSampler(self, seed)
 
     def estimator(self, pseudo_count: Optional[float] = None) -> 'IntegerStepBernoulliEditEstimator':
-        return IntegerStepBernoulliEditEstimator(self.num_vals, pseudo_count=pseudo_count, name=self.name)
+        init_est = self.init_dist.estimator()
+        return IntegerStepBernoulliEditEstimator(self.num_vals, init_estimator=init_est, pseudo_count=pseudo_count, name=self.name, keys=self.keys)
 
     def dist_to_encoder(self) -> 'IntegerStepBernoulliEditDataEncoder':
         return IntegerStepBernoulliEditDataEncoder(init_encoder=self.init_dist.dist_to_encoder())
@@ -129,9 +136,11 @@ class IntegerStepBernoulliEditSampler(DistributionSampler):
 class IntegerStepBernoulliEditAccumulator(SequenceEncodableStatisticAccumulator):
 
     def __init__(self, num_vals: int, init_acc: Optional[SequenceEncodableStatisticAccumulator] = NullAccumulator(),
+                 name: Optional[str] = None, 
                  keys: Optional[str] = None) -> None:
         self.pcnt = np.zeros((num_vals, 3), dtype=np.float64)
-        self.key = keys
+        self.keys = keys
+        self.name = name
         self.num_vals = num_vals
         self.init_acc = init_acc if init_acc is not None else NullAccumulator()
         self.tot_sum = 0.0
@@ -181,9 +190,9 @@ class IntegerStepBernoulliEditAccumulator(SequenceEncodableStatisticAccumulator)
         self.tot_sum += weight
         self.init_acc.initialize(x[0], weight, rng)
 
-    def seq_update(self, x: E, weights: np.ndarray, estimate: Optional[IntegerStepBernoulliEditDistribution]) -> None:
+    def seq_update(self, x: 'IntegerStepBernoulliEncodedDataSequence', weights: np.ndarray, estimate: Optional[IntegerStepBernoulliEditDistribution]) -> None:
 
-        sz, idx, xs, ys, ym, init_enc = x
+        sz, idx, xs, ys, ym, init_enc = x.data
 
         agg_cnt0 = np.bincount(xs[ym[0]], weights=weights[idx[ym[0]]])
         agg_cnt1 = np.bincount(xs[ym[1]], weights=weights[idx[ym[1]]])
@@ -196,8 +205,8 @@ class IntegerStepBernoulliEditAccumulator(SequenceEncodableStatisticAccumulator)
 
         self.init_acc.seq_update(init_enc, weights, estimate.init_dist)
 
-    def seq_initialize(self, x: E, weights: np.ndarray, rng: RandomState) -> None:
-        sz, idx, xs, ys, ym, init_enc = x
+    def seq_initialize(self, x: 'IntegerStepBernoulliEncodedDataSequence', weights: np.ndarray, rng: RandomState) -> None:
+        sz, idx, xs, ys, ym, init_enc = x.data
 
         if not self._init_rng:
             self._rng_initialize(rng)
@@ -231,19 +240,19 @@ class IntegerStepBernoulliEditAccumulator(SequenceEncodableStatisticAccumulator)
         return self
 
     def key_merge(self, stats_dict: Dict[str, Any]) -> None:
-        if self.key is not None:
-            if self.key in stats_dict:
-                temp = stats_dict[self.key]
-                stats_dict[self.key] = (temp[0] + self.pcnt, temp[1] + self.tot_sum)
+        if self.keys is not None:
+            if self.keys in stats_dict:
+                temp = stats_dict[self.keys]
+                stats_dict[self.keys] = (temp[0] + self.pcnt, temp[1] + self.tot_sum)
             else:
-                stats_dict[self.key] = (self.pcnt, self.tot_sum)
+                stats_dict[self.keys] = (self.pcnt, self.tot_sum)
 
         self.init_acc.key_merge(stats_dict)
 
     def key_replace(self, stats_dict: Dict[str, Any]) -> None:
-        if self.key is not None:
-            if self.key in stats_dict:
-                self.pcnt, self.tot_sum = stats_dict[self.key]
+        if self.keys is not None:
+            if self.keys in stats_dict:
+                self.pcnt, self.tot_sum = stats_dict[self.keys]
 
         self.init_acc.key_replace(stats_dict)
 
@@ -253,13 +262,15 @@ class IntegerStepBernoulliEditAccumulator(SequenceEncodableStatisticAccumulator)
 class IntegerStepBernoulliEditAccumulatorFactory(StatisticAccumulatorFactory):
 
     def __init__(self, num_vals: int, init_factory: Optional[StatisticAccumulatorFactory] = NullAccumulatorFactory,
+                 name: Optional[str] = None,
                  keys: Optional[str] = None) -> None:
         self.keys = keys
         self.init_factory = init_factory if init_factory is not None else NullAccumulatorFactory()
         self.num_vals = num_vals
+        self.name = name
 
     def make(self) -> 'IntegerStepBernoulliEditAccumulator':
-        return IntegerStepBernoulliEditAccumulator(self.num_vals, init_acc=self.init_factory.make(), keys=self.keys)
+        return IntegerStepBernoulliEditAccumulator(self.num_vals, init_acc=self.init_factory.make(), name=self.name, keys=self.keys)
 
 
 class IntegerStepBernoulliEditEstimator(ParameterEstimator):
@@ -278,7 +289,7 @@ class IntegerStepBernoulliEditEstimator(ParameterEstimator):
 
     def accumulator_factory(self) -> 'IntegerStepBernoulliEditAccumulatorFactory':
         init_factory = self.init_est.accumulator_factory()
-        return IntegerStepBernoulliEditAccumulatorFactory(self.num_vals, init_factory, self.keys)
+        return IntegerStepBernoulliEditAccumulatorFactory(self.num_vals, init_factory, keys=self.keys, name=self.name)
 
     def __get_pqk(self, obs_counts: np.ndarray, n: int) -> np.ndarray:
         sidx = np.argsort(-obs_counts)
@@ -369,11 +380,11 @@ class IntegerStepBernoulliEditEstimator(ParameterEstimator):
                 log_pmat = np.empty((self.num_vals, 4), dtype=np.float64)
                 log_pmat.fill(np.log(self.min_prob))
 
-                if s0 != 0:
+                if np.any(s0 != 0):
                     log_pmat[:, 0] = np.log(np.maximum((s0 - count_mat[:, 1]) / s0, self.min_prob))
                     log_pmat[:, 2] = np.log(np.maximum(count_mat[:, 1] / s0, self.min_prob))
 
-                if s1 != 0:
+                if np.any(s1 != 0):
                     log_pmat[:, 1] = np.log(np.maximum(count_mat[:, 0] / s1, self.min_prob))
                     log_pmat[:, 3] = np.log(np.maximum(count_mat[:, 2] / s1, self.min_prob))
 
@@ -417,8 +428,7 @@ class IntegerStepBernoulliEditDataEncoder(DataSequenceEncoder):
         else:
             return False
 
-    def seq_encode(self, x: Sequence[T]) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray,
-                                                  Tuple[np.ndarray, np.ndarray, np.ndarray], Optional[Any]]:
+    def seq_encode(self, x: Sequence[T]) -> 'IntegerStepBernoulliEncodedDataSequence':
         idx = []
         xs = []
         ys = []
@@ -447,4 +457,14 @@ class IntegerStepBernoulliEditDataEncoder(DataSequenceEncoder):
 
         init_enc = self.init_encoder.seq_encode(pre)
 
-        return len(x), idx, xs, ys, ym, init_enc
+        return IntegerStepBernoulliEncodedDataSequence(data=(len(x), idx, xs, ys, ym, init_enc))
+
+class IntegerStepBernoulliEncodedDataSequence(EncodedDataSequence):
+
+    def __init__(self, data: Tuple[int, np.ndarray, np.ndarray, np.ndarray,
+                                   Tuple[np.ndarray, np.ndarray, np.ndarray], EncodedDataSequence]):
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'IntegerStepBernoulliEncodedDataSequence(data={self.data})'
+

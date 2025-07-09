@@ -11,7 +11,7 @@ import numpy as np
 from numpy.random import RandomState
 from pysp.arithmetic import *
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
-    ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory
+    ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory, EncodedDataSequence
 
 from typing import Callable, Dict, Tuple, Any, Optional, Sequence, TypeVar, List
 
@@ -37,8 +37,12 @@ class SelectDistribution(SequenceEncodableProbabilityDistribution):
         idx = self.choice_function(x)
         return self.dists[idx].log_density(x)
 
-    def seq_log_density(self, x: Sequence[T]) -> np.ndarray:
-        xi, idx, enc_tuple = x
+    def seq_log_density(self, x: 'SelectEncodedDataSequence') -> np.ndarray:
+
+        if not isinstance(x, SelectEncodedDataSequence):
+            raise Exception('Requires SelectEncodedDataSequence for `seq_` calls.')
+
+        xi, idx, enc_tuple = x.data
         rv = np.zeros(len(xi))
         for i in range(len(idx)):
             rv[xi[i]] = self.dists[i].seq_log_density(enc_tuple[i])
@@ -98,18 +102,18 @@ class SelectEstimatorAccumulator(SequenceEncodableStatisticAccumulator):
         self.accumulators[idx].initialize(x, weight, self._acc_rng[idx])
         self.weights[idx] += weight
 
-    def seq_update(self, x, weights: np.ndarray, estimate: SelectDistribution) -> None:
-        xi, idx, enc_tuple = x
+    def seq_update(self, x: 'SelectEncodedDataSequence', weights: np.ndarray, estimate: SelectDistribution) -> None:
+        xi, idx, enc_tuple = x.data
         for i in range(len(idx)):
             w = weights[xi[i]]
             self.accumulators[i].seq_update(enc_tuple[i], w, estimate.dists[i])
             self.weights[i] += np.sum(w)
 
-    def seq_initialize(self, x, weights: np.ndarray, rng: RandomState) -> None:
+    def seq_initialize(self, x: 'SelectEncodedDataSequence', weights: np.ndarray, rng: RandomState) -> None:
         if not self._rng_init:
             self._rng_initialize(rng)
 
-        xi, idx, enc_tuple = x
+        xi, idx, enc_tuple = x.data
         for i in range(len(idx)):
             w = weights[xi[i]]
             self.accumulators[i].seq_initialize(enc_tuple[i], w, self._acc_rng[i])
@@ -153,6 +157,7 @@ class SelectEstimatorAccumulatorFactory(StatisticAccumulatorFactory):
         return SelectEstimatorAccumulator([x.accumulatorFactory().make() for x in self.estimators],
                                           self.choice_function)
 
+
 class SelectEstimator(ParameterEstimator):
     def __init__(self, estimators, choice_function):
         self.estimators = estimators
@@ -185,7 +190,7 @@ class SelectDataEncoder(DataSequenceEncoder):
         else:
             return False
 
-    def seq_encode(self, x: Sequence[T]) -> Tuple[Tuple[np.ndarray, ...], Tuple[int, ...], Tuple[Any, ...]]:
+    def seq_encode(self, x: Sequence[T]) -> 'SelectEncodedDataSequence':
         cnt = 0
         idx_dict = dict()
 
@@ -206,4 +211,14 @@ class SelectDataEncoder(DataSequenceEncoder):
             idx_xi.append(np.asarray(vals[0]))
             idx_enc_vals.append(self.encoders[keys].seq_encode(vals[1]))
 
-        return tuple(idx_xi), tuple(idx_keys), tuple(idx_enc_vals)
+        return SelectEncodedDataSequence(data=(tuple(idx_xi), tuple(idx_keys), tuple(idx_enc_vals)))
+
+
+class SelectEncodedDataSequence(EncodedDataSequence):
+
+    def __init__(self, data: Tuple[Tuple[np.ndarray, ...], Tuple[int, ...], Tuple[EncodedDataSequence, ...]]):
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'SelectEncodedDataSequence(data=f{self.data})'
+

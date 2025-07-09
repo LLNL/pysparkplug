@@ -1,15 +1,11 @@
 """Defines the log-pseudo-determinant, polgamma, trigamma, and digamma inverse functions."""
-from scipy.special import gammaln
-from scipy.special import gammaln, betaln, beta
-from scipy.special import digamma, psi  # as digammaS0
-from scipy.special import zeta, gamma, polygamma
+from typing import Union, Optional, List, Iterable
+from scipy.special import digamma, zeta, gamma, gammaln, betaln, beta
 import numpy as np
 import math
 from pysp.arithmetic import *
-from typing import Union, Optional, Any, List, Iterable
 
 D1 = digamma(1.0)
-
 
 def logpdet(x_mat: np.ndarray) -> float:
     """Computes the log-pseudo-determinant for a symmetric dense matrix.
@@ -30,7 +26,29 @@ def logpdet(x_mat: np.ndarray) -> float:
         return -math.inf
 
 
-def polygamma_loc(n, y, out=None):
+def polygamma_loc(
+    n: int,
+    y: float,
+    out: Optional[np.ndarray] = None
+) -> Union[np.ndarray, float]:
+    """
+    Computes the localized polygamma function.
+
+    This function calculates the polygamma function for a given order `n` and input `y`.
+    The calculation uses the Riemann zeta function and the Gamma function. If an `out`
+    array is provided, the result is stored in the array.
+
+    Args:
+        n (int): The order of the polygamma function (non-negative integer).
+        y (float): The input value for the polygamma function.
+        out (Optional[np.ndarray]): An optional array to store the result.
+            If provided, the computation result is stored in this array. Defaults to `None`.
+
+    Returns:
+        Union[np.ndarray, float]:
+            - If `out` is provided, returns the `out` array containing the result.
+            - If `out` is not provided, returns the computed result as a float.
+    """
     if out is not None:
         fac2 = zeta(n + 1, y, out=out)
         fac2 *= (-1.0) ** (n + 1) * gamma(n + 1.0)
@@ -82,11 +100,6 @@ def digammainv(y: Union[np.ndarray, float], out: Optional[np.ndarray] = None) ->
             digamma(x, out=t1)
             zeta(2, x, out=t2)
 
-            # if np.any(t2 == 0) or np.any(np.isnan(t2)) or np.any(np.isinf(t2)):
-            #    print('bad')
-            # if np.any(np.isnan(t1)) or np.any(np.isinf(t1)):
-            #    print('bad')
-
             t1 -= z
             t1 /= t2
             x -= t1
@@ -105,3 +118,31 @@ def digammainv(y: Union[np.ndarray, float], out: Optional[np.ndarray] = None) ->
         x -= ((digamma(x) - y) / trigamma(x))
 
     return x
+
+
+def stirling2(n: int, k: int) -> int:
+    """
+    Computes the Stirling number of the second kind.
+
+    The Stirling number of the second kind, S(n, k), represents the number of ways
+    to partition a set of `n` elements into `k` non-empty subsets. This function
+    uses a recursive approach to compute the value.
+
+    Args:
+        n (int): The total number of elements in the set (must be positive).
+        k (int): The number of non-empty subsets (must be positive).
+
+    Returns:
+        int: The Stirling number of the second kind, S(n, k).
+
+    """
+    assert n > 0 and k > 0
+
+    if n == 0 and k == 0:
+        return 1
+    elif n == 0:
+        return 0
+    elif k == 0:
+        return 0
+    else:
+        return k * stirling2(n - 1, k) + stirling2(n - 1, k - 1)

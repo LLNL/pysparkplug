@@ -1,6 +1,11 @@
-from typing import Optional, Any, Dict, Union
+from typing import Optional, Any, Dict, Union, Sequence
 from numpy.random import RandomState
-from pysp.bstats.pdist import ParameterEstimator, ProbabilityDistribution, StatisticAccumulator
+from pysp.bstats.pdist import (ParameterEstimator,
+                               ProbabilityDistribution,
+                               StatisticAccumulator,
+                               DataSequenceEncoder,
+                               EncodedDataSequence)
+
 from pysp.bstats.beta import BetaDistribution
 from pysp.bstats.nulldist import NullDistribution, null_dist
 import numpy as np
@@ -97,6 +102,9 @@ class BernoulliDistribution(ProbabilityDistribution):
     def seq_encode(self, x):
         return np.asarray(x, dtype=bool)
 
+    def dist_to_encoder(self) -> 'BernoulliDataEncoder':
+        return BernoulliDataEncoder()
+
     def sampler(self, seed: Optional[int] = None):
         return BernoulliSampler(self, seed)
 
@@ -168,6 +176,9 @@ class BernoulliEstimatorAccumulator(StatisticAccumulator):
             if self.key in stats_dict:
                 self.from_value(stats_dict[self.key].value())
 
+    def acc_to_encoder(self) -> 'BernoulliDataEncoder':
+        return BernoulliDataEncoder()
+
 
 class BernoulliEstimatorAccumulatorFactory(object):
 
@@ -218,3 +229,25 @@ class BernoulliEstimator(ParameterEstimator):
 
         else:
             return BernoulliDistribution(psum/(psum + nsum), name=self.name, prior=null_dist, keys=self.keys)
+
+
+class BernoulliDataEncoder(DataSequenceEncoder):
+    
+    def __str__(self) -> str:
+        return 'BernoulliDataEncoder'
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, BernoulliDataEncoder)
+
+    def seq_encode(self, x: Union[np.array, Sequence[bool]]) -> 'BernoulliEncodedData':
+        return BernoulliEncodedData(np.asarray(x, dtype=bool))
+
+
+class BernoulliEncodedData(EncodedDataSequence):
+    def __init__(self, data: np.ndarray):
+        super().__init__(data)
+
+    def __repr__(self) -> str:
+        return f'BernoulliEncodedData(data={self.data})'
+
+

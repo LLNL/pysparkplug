@@ -7,7 +7,7 @@ Ignored distribution is simply a distribution that is ignored in estimation and 
 
 """
 from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
-    ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory
+    ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory, EncodedDataSequence
 from numpy.random import RandomState
 import numpy as np
 from pysp.stats.null_dist import NullDistribution, NullDataEncoder, NullSampler
@@ -18,19 +18,31 @@ E = TypeVar('E')
 
 
 class IgnoredDistribution(SequenceEncodableProbabilityDistribution):
+    """IgnoredDistribution object for using IgnoredDistributions in estimation.
 
-    def __init__(self, dist: Optional[SequenceEncodableProbabilityDistribution], name: Optional[str] = None):
-        """IgnoredDistribution object for using IgnoredDistributions in estimation.
+    Attributes:
+        dist (SequenceEncodableProbabilityDistribution): Distribution to be ignored.
+        name (Optional[str]): Set name for object instance.
+        keys (Optional[str]): Keys for distribution (just a place holder).
+
+    """
+
+    def __init__(self, dist: Optional[SequenceEncodableProbabilityDistribution], name: Optional[str] = None, keys: Optional[str] = None):
+        """IgnoredDistribution object.
 
         Args:
             dist (Optional[SequenceEncodableProbabilityDistribution]): Distribution to be ignored.
             name (Optional[str]): Set name for object instance.
+            keys (Optional[str]): Keys for distribution (just a place holder).
+
         """
         self.dist = dist if dist is not None else NullDistribution()
         self.name = name
+        self.keys = keys
 
     def __str__(self) -> str:
-        return 'IgnoredDistribution(%s)' % (str(self.dist))
+
+        return 'IgnoredDistribution(%s, name=%s, keys=%s)' % (repr(self.dist), repr(self.name), repr(self.keys))
 
     def density(self, x: T) -> float:
         """Evaluate the density of the IgnoredDistribution at x.
@@ -39,7 +51,7 @@ class IgnoredDistribution(SequenceEncodableProbabilityDistribution):
             x (T): Type corresponding to attribute 'dist'.
 
         Returns:
-            Density of attribute 'dist' at x
+            float: Density of attribute 'dist' at x
 
         """
         return np.exp(self.log_density(x))
@@ -51,28 +63,49 @@ class IgnoredDistribution(SequenceEncodableProbabilityDistribution):
             x (T): Type corresponding to attribute 'dist'.
 
         Returns:
-            log-density of attribute 'dist' at x.
+            float: log-density of attribute 'dist' at x.
 
         """
         return self.dist.log_density(x)
 
-    def seq_log_density(self, x: E) -> np.ndarray:
-        rv = self.dist.seq_log_density(x)
+    def seq_log_density(self, x: EncodedDataSequence) -> np.ndarray:
+
+        if isinstance(x, IgnoredEncodedDataSequence):
+            rv = self.dist.seq_log_density(x.data)
+        elif not isinstance(x, IgnoredEncodedDataSequence) and isinstance(x, EncodedDataSequence):
+            rv = self.dist.seq_log_density(x)
+        else:
+            raise Exception("Wrong EncodedDataSequence passed to seq_log_density().")
+        
         return rv
 
     def sampler(self, seed: Optional[int] = None) -> 'IgnoredSampler':
         return IgnoredSampler(self, seed)
 
     def estimator(self, pseudo_count: Optional[float] = None) -> 'IgnoredEstimator':
-        return IgnoredEstimator(dist=self.dist, name=self.name)
+        return IgnoredEstimator(dist=self.dist, name=self.name, keys=self.keys)
 
     def dist_to_encoder(self) -> 'IgnoredDataEncoder':
         return IgnoredDataEncoder(encoder=self.dist.dist_to_encoder())
 
 
 class IgnoredSampler(DistributionSampler):
+    """IgnoredSampler object for generating samples from Ignored distribution.
+
+    Attributes:
+        dist_sampler (DistributionSampler): DistributionSampler for ignored distribution.
+        null_sampler (bool): True if IgnoredDistribution is the NullDistribution.
+
+    """
 
     def __init__(self, dist: IgnoredDistribution, seed: Optional[int] = None) -> None:
+        """IgnoredSampler object.
+
+        Attributes:
+            dist (IgnoredDistribution): DistributionSampler for ignored distribution.
+            seed (Optional[int]): Set seed for generating random samples.
+
+        """
         self.dist_sampler = dist.dist.sampler(seed)
         self.null_sampler = isinstance(self.dist_sampler, NullSampler)
 
@@ -87,21 +120,38 @@ class IgnoredSampler(DistributionSampler):
 
 
 class IgnoredAccumulator(SequenceEncodableStatisticAccumulator):
+    """IgnoredAccumulator object for aggregating sufficient statistics.
 
-    def __init__(self, encoder: Optional[DataSequenceEncoder] = NullDataEncoder(), name: Optional[str] = None) -> None:
+    Attributes:
+        encoder (DataSequenceEncoder): DataSequenceEncoder for the ignored distribution.
+        name (Optional[str]): Name for distribution.
+        keys (Optional[str]): Name for param dists (place holder only).
+
+    """
+
+    def __init__(self, encoder: Optional[DataSequenceEncoder] = NullDataEncoder(), name: Optional[str] = None, keys: Optional[str] = None) -> None:
+        """IgnoredAccumulator object.
+
+        Args:
+            encoder (Optional[DataSequenceEncoder]): DataSequenceEncoder for the ignored distribution.
+            name (Optional[str]): Name for distribution.
+            keys (Optional[str]): Name for param dists (place holder only).
+
+        """
         self.encoder = encoder if encoder is not None else NullDataEncoder()
         self.name = name
+        self.keys = keys
 
     def update(self, x: T, weight: float, estimate: Optional[IgnoredDistribution]) -> None:
         pass
 
-    def seq_update(self, x: E, weights: np.ndarray, estimate: Optional[IgnoredDistribution]) -> None:
+    def seq_update(self, x: 'IgnoredEncodedDataSequence', weights: np.ndarray, estimate: Optional[IgnoredDistribution]) -> None:
         pass
 
     def initialize(self, x: T, weight: float, rng: Optional[RandomState]) -> None:
         pass
 
-    def seq_initialize(self, x: E, weight: np.ndarray, rng: Optional[RandomState]) -> None:
+    def seq_initialize(self, x: 'IgnoredEncodedDataSequence', weight: np.ndarray, rng: Optional[RandomState]) -> None:
         pass
 
     def combine(self, suff_stat: Any) -> 'IgnoredAccumulator':
@@ -124,22 +174,49 @@ class IgnoredAccumulator(SequenceEncodableStatisticAccumulator):
 
 
 class IgnoredAccumulatorFactory(StatisticAccumulatorFactory):
+    """IgnoredAccumulatorFactory for creating IgnoredAccumulator objects.
 
-    def __init__(self, encoder: Optional[DataSequenceEncoder] = NullDataEncoder(), name: Optional[str] = None):
+    Attributes:
+        encoder (DataSequenceEncoder): DataSequenceEncoder for base distribution.
+        name (Optional[str]): Name for distribution.
+        keys (Optional[str]): Keys for distribution (just a place holder).
+
+    """
+
+    def __init__(self, encoder: Optional[DataSequenceEncoder] = NullDataEncoder(), name: Optional[str] = None, keys: Optional[str] = None):
+        """IgnoredAccumulatorFactory object.
+
+        Args:
+            encoder (Optional[DataSequenceEncoder]): DataSequenceEncoder for base distribution.
+            name (Optional[str]): Name for distribution.
+            keys (Optional[str]): Keys for distribution (just a place holder).
+
+        """
         self.encoder = encoder if encoder is not None else NullDataEncoder()
         self.name = name
+        self.keys = keys
 
     def make(self) -> 'IgnoredAccumulator':
-        return IgnoredAccumulator(encoder=self.encoder, name=self.name)
+        return IgnoredAccumulator(encoder=self.encoder, name=self.name, keys=self.keys)
 
 
 class IgnoredEstimator(ParameterEstimator):
+    """IgnoredEstimator object for consistency in estimation step.
+
+    Attributes:
+        dist (SequenceEncodableProbabilityDistribution): Distribution to be ignored.
+        pseudo_count (Optional[float]): Place holder for consistency.
+        suff_stat (Optional[Any]): Place holder for consistency.
+        keys (Optional[str]): Place holder for consistency.
+        name (Optional[str]): Set name for object instance.
+
+    """
 
     def __init__(self, dist: Optional[SequenceEncodableProbabilityDistribution] = NullDistribution(),
                  pseudo_count: Optional[float] = None, suff_stat: Optional[Any] = None,
                  keys: Optional[str] = None,
                  name: Optional[str] = None) -> None:
-        """IgnoredEstimator object for consistency in estimation step.
+        """IgnoredEstimator object.
 
         Args:
             dist (Optional[SequenceEncodableProbabilityDistribution]): Distribution to be ignored.
@@ -148,14 +225,12 @@ class IgnoredEstimator(ParameterEstimator):
             keys (Optional[str]): Place holder for consistency.
             name (Optional[str]): Set name for object instance.
 
-        Args:
-            dist (SequenceEncodableProbabilityDistribution): Distribution to be ignored.
-            pseudo_count (Optional[float]): Place holder for consistency.
-            suff_stat (Optional[Any]): Place holder for consistency.
-            keys (Optional[str]): Place holder for consistency.
-            name (Optional[str]): Set name for object instance.
-
         """
+        if isinstance(keys, str) or keys is None:
+            self.keys = keys
+        else:
+            raise TypeError("IgnoredEstimator requires keys to be of type 'str'.")
+
         self.dist = dist if dist is not None else NullDistribution
         self.pseudo_count = pseudo_count
         self.suff_stat = suff_stat
@@ -163,15 +238,28 @@ class IgnoredEstimator(ParameterEstimator):
         self.name = name
 
     def accumulator_factory(self):
-        return IgnoredAccumulatorFactory(self.dist.dist_to_encoder(), name=self.name)
+        return IgnoredAccumulatorFactory(self.dist.dist_to_encoder(), name=self.name, keys=self.keys)
 
     def estimate(self, nobs: Optional[float], suff_stat: Any) -> IgnoredDistribution:
         return IgnoredDistribution(self.dist, name=self.name)
 
 
 class IgnoredDataEncoder(DataSequenceEncoder):
+    """IgnoredDataEncoder object for encoding sequences of data of ignored distribution.
+
+    Attributes:
+        encoder (DataSequenceEncoder): DataSequenceEncoder for ignored distribution.
+        null (bool): True if the DataSequenceEncoder is NullDataEncoder.
+
+    """
 
     def __init__(self, encoder: Optional[DataSequenceEncoder] = NullDataEncoder()) -> None:
+        """IgnoredDataEncoder object.
+
+        Attributes:
+            encoder (Optional[DataSequenceEncoder]): DataSequenceEncoder for ignored distribution.
+
+        """
         self.encoder = encoder if encoder is not None else NullDataEncoder()
         self.null = isinstance(self.encoder, NullDataEncoder)
 
@@ -184,10 +272,28 @@ class IgnoredDataEncoder(DataSequenceEncoder):
         else:
             return False
 
-    def seq_encode(self, x: Sequence[T]) -> Any:
-        enc_data = self.encoder.seq_encode(x)
-        return enc_data
+    def seq_encode(self, x: Sequence[T]) -> 'IgnoredEncodedDataSequence':
+        return IgnoredEncodedDataSequence(data=self.encoder.seq_encode(x))
 
+class IgnoredEncodedDataSequence(EncodedDataSequence):
+    """IgnoredEncodedDataSequence object for vectorized calls.
+
+    Attributes:
+        data (EncodedDataSequence): EncodedDataSequence object for ignored distribution.
+
+    """
+
+    def __init__(self, data: EncodedDataSequence):
+        """IgnoredEncodedDataSequence object.
+
+        Args:
+            data (EncodedDataSequence): EncodedDataSequence object for ignored distribution.
+
+        """
+        super().__init__(data=data)
+
+    def __repr__(self) -> str:
+        return f'IgnoredEncodedDataSequence(data={self.data})'
 
 
 
