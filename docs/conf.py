@@ -7,9 +7,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'pysparkplug'
-copyright = '2024, adam'
-author = 'adam'
-release = '0.1'
+copyright = '2025, Adam Walder'
+author = 'Adam Walder'
+release = '1.1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -21,13 +21,12 @@ extensions = [
     'sphinx.ext.mathjax',
 ]
 
-templates_path = ['_templates']
 exclude_patterns = []
 
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
