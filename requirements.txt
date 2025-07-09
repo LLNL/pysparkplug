@@ -63,6 +63,7 @@ scikit-learn==1.7.0
 scipy==1.15.3
 six==1.17.0
 soupsieve==2.7
+sphinx-autodoc-typehints==3.0.1
 stack-data==0.6.3
 threadpoolctl==3.6.0
 tinycss2==1.4.0
