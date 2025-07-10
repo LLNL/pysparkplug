@@ -219,7 +219,7 @@ class CategoricalAccumulator(SequenceEncodableStatisticAccumulator):
         """
         self.update(x, weight, None)
 
-    def get_seq_lambda(self):
+    def get_seq_lambda(self) -> List:
         """Returns a list of sequence update functions.
 
         Returns:
@@ -227,8 +227,12 @@ class CategoricalAccumulator(SequenceEncodableStatisticAccumulator):
         """
         return [self.seq_update]
 
-    def seq_update(self, x: 'CategoricalEncodedDataSequence', weights: np.ndarray,
-                   estimate: Optional['CategoricalDistribution']) -> None:
+    def seq_update(
+        self,
+        x: 'CategoricalEncodedDataSequence',
+        weights: np.ndarray,
+        estimate: Optional['CategoricalDistribution']
+    ) -> None:
         """Vectorized update of the accumulator with a sequence of encoded data.
 
         Args:
@@ -246,7 +250,12 @@ class CategoricalAccumulator(SequenceEncodableStatisticAccumulator):
             for i in range(0, len(bcnt)):
                 self.count_map[inv_key_map[i]] += bcnt[i]
 
-    def seq_initialize(self, x: 'CategoricalEncodedDataSequence', weights: np.ndarray, rng: Optional[RandomState]) -> None:
+    def seq_initialize(
+        self,
+        x: 'CategoricalEncodedDataSequence',
+        weights: np.ndarray,
+        rng: Optional[RandomState]
+    ) -> None:
         """Initializes the accumulator with a sequence of encoded data.
 
         Args:
@@ -456,7 +465,7 @@ class CategoricalDataEncoder(DataSequenceEncoder):
         """
         return 'CategoricalDataEncoder'
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """Checks equality with another encoder.
 
         Args:
@@ -489,7 +498,7 @@ class CategoricalEncodedDataSequence(EncodedDataSequence):
 
     """
 
-    def __init__(self, data: Tuple[np.ndarray, np.ndarray]):
+    def __init__(self, data: Tuple[np.ndarray, np.ndarray]) -> None:
         """Initializes a CategoricalEncodedDataSequence object.
 
         Args:
