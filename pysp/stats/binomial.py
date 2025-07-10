@@ -25,10 +25,6 @@ E = Tuple[np.ndarray, np.ndarray, np.ndarray, int, int]
 
 class BinomialDistribution(SequenceEncodableProbabilityDistribution):
     """BinomialDistribution object used for Binomial
-    .. math::
-
-    Probability mass function:
-        f(x | n, p) = {n \choose x} p^x (1-p)^{n-x}, min_val <= x < min_val + n.
 
     Attributes:
         p (float): Probability of success, between (0, 1.0].
