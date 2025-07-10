@@ -717,10 +717,22 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
         self._idx_rng: Optional[RandomState] = None
 
     def update(self, x: Sequence[T], weight: float, estimate: HiddenMarkovModelDistribution) -> None:
+        """Update the accumulator with a single HMM observation sequence.
+
+        Args:
+            x (Sequence[T]): Observed sequence.
+            weight (float): Weight for the observation.
+            estimate (HiddenMarkovModelDistribution): Current HMM distribution estimate.
+        """
         enc_x = estimate.dist_to_encoder().seq_encode([x])
         self.seq_update(enc_x, np.asarray([weight]), estimate)
 
     def _rng_initialize(self, rng: RandomState) -> None:
+        """Initialize random number generators for accumulator components.
+
+        Args:
+            rng (RandomState): Random number generator.
+        """
 
         rng_seeds = rng.randint(maxrandint, size=2+self.num_states)
         self._idx_rng = RandomState(seed=rng_seeds[0])
@@ -729,6 +741,13 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
         self._init_rng = True
 
     def initialize(self, x: Sequence[T], weight: float, rng: RandomState) -> None:
+        """Initialize the accumulator with a single HMM observation sequence.
+
+        Args:
+            x (Sequence[T]): Observed sequence.
+            weight (float): Weight for the observation.
+            rng (RandomState): Random number generator.
+        """
 
         if not self._init_rng:
             self._rng_initialize(rng)
@@ -755,6 +774,13 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
                     self.state_counts[idx[i]] += weight
 
     def seq_initialize(self, x: 'HiddenMarkovEncodedDataSequence', weights: np.ndarray, rng: np.random.RandomState) -> None:
+        """Vectorized initialization for encoded HMM data.
+
+        Args:
+            x (HiddenMarkovEncodedDataSequence): Encoded HMM data sequence.
+            weights (np.ndarray): Weights for each sequence.
+            rng (np.random.RandomState): Random number generator.
+        """
 
         if not x.numba_enc:
             (tot_cnt, idx_bands, has_next, len_vec, idx_mat, idx_vec, enc_data), xs_enc, len_enc = x.data
@@ -987,6 +1013,14 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
 
     def combine(self, suff_stat: Tuple[int, np.ndarray, np.ndarray, np.ndarray, Sequence[T1], Optional[T2]]) \
             -> 'HiddenMarkovAccumulator':
+        """Aggregate sufficient statistics with this accumulator.
+
+        Args:
+            suff_stat (Tuple[int, np.ndarray, np.ndarray, np.ndarray, Sequence[T1], Optional[T2]]): Sufficient statistics to combine.
+
+        Returns:
+            HiddenMarkovAccumulator: Self after combining.
+        """
 
         num_states, init_counts, state_counts, trans_counts, acc_values, len_acc_value = suff_stat
 
@@ -1004,6 +1038,11 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
 
     def value(self) -> Tuple[int, np.ndarray, np.ndarray, np.ndarray, Sequence[Any],
                              Optional[Any]]:
+        """Return the sufficient statistics as a tuple.
+
+        Returns:
+            Tuple[int, np.ndarray, np.ndarray, np.ndarray, Sequence[Any], Optional[Any]]: Sufficient statistics.
+        """
         len_val = self.len_accumulator.value()
 
         return self.num_states, self.init_counts, self.state_counts, self.trans_counts, tuple(
@@ -1011,6 +1050,14 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
 
     def from_value(self, x: Tuple[int, np.ndarray, np.ndarray, np.ndarray, Sequence[T1], Optional[T2]])\
             -> 'HiddenMarkovAccumulator':
+        """Set the sufficient statistics from a tuple.
+
+        Args:
+            x (Tuple[int, np.ndarray, np.ndarray, np.ndarray, Sequence[T1], Optional[T2]]): Sufficient statistics.
+
+        Returns:
+            HiddenMarkovAccumulator: Self after setting values.
+        """
 
         num_states, init_counts, state_counts, trans_counts, accumulators, len_acc = x
         self.num_states = num_states
@@ -1027,6 +1074,11 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
         return self
 
     def key_merge(self, stats_dict: Dict[str, Any]) -> None:
+        """Merge this accumulator into a dictionary by key.
+
+        Args:
+            stats_dict (Dict[str, Any]): Dictionary of accumulators.
+        """
 
         if self.init_key is not None:
             if self.init_key in stats_dict:
@@ -1057,6 +1109,11 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
         return None
 
     def key_replace(self, stats_dict: Dict[str, Any]) -> None:
+        """Replace this accumulator's values with those from a dictionary by key.
+
+        Args:
+            stats_dict (Dict[str, Any]): Dictionary of accumulators.
+        """
 
         if self.init_key is not None:
             if self.init_key in stats_dict:
@@ -1079,7 +1136,11 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
         return None
 
     def acc_to_encoder(self) -> 'HiddenMarkovDataEncoder':
+        """Return a HiddenMarkovDataEncoder for this accumulator.
 
+        Returns:
+            HiddenMarkovDataEncoder: Encoder object.
+        """
         emission_encoder = self.accumulators[0].acc_to_encoder()
         len_encoder = self.len_accumulator.acc_to_encoder()
 
@@ -1088,39 +1149,32 @@ class HiddenMarkovAccumulator(SequenceEncodableStatisticAccumulator):
 
 
 class HiddenMarkovAccumulatorFactory(StatisticAccumulatorFactory):
-    """HiddenMarkovAccumulatorFactory object for creating HiddenMarkovEstimatorAccumulator objects.
+    """Factory for creating HiddenMarkovAccumulator objects.
 
     Attributes:
-        factories (Sequence[StatisticAccumulatorFactory]): StatisticAccumulatorFactory object for the emission
-            distributions.
-        len_factory (StatisticAccumulatorFactory): StatisticAccumulatorFactory for the length distribution. Defaults
-            to NullAccumulatorFactory().
-        use_numba (bool): Default to True. Indicated if Numbda is to be used for 'seq_' calls.
-        keys (Tuple[Optional[str],Optional[str], Optional[str]]): Set keys for initial states, state
-            transitions, and the emission distributions.
-        name (Optional[str]): Name for object.
-
-
+        factories (Sequence[StatisticAccumulatorFactory]): Factories for emission distributions.
+        len_factory (StatisticAccumulatorFactory): Factory for the length distribution.
+        use_numba (bool): Whether to use Numba for 'seq_' calls.
+        keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for initial states, transitions, and emissions.
+        name (Optional[str]): Name for the object.
     """
 
-    def __init__(self, factories: Sequence[StatisticAccumulatorFactory],
-                 len_factory: StatisticAccumulatorFactory = NullAccumulatorFactory(),
-                 use_numba: bool = False,
-                 keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
-                 name: Optional[str] = None) -> None:
-        """HiddenMarkovAccumulatorFactory object.
+    def __init__(
+        self,
+        factories: Sequence[StatisticAccumulatorFactory],
+        len_factory: StatisticAccumulatorFactory = NullAccumulatorFactory(),
+        use_numba: bool = False,
+        keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
+        name: Optional[str] = None
+    ) -> None:
+        """Initializes HiddenMarkovAccumulatorFactory.
 
-        Attributes:
-            factories (Sequence[StatisticAccumulatorFactory]): StatisticAccumulatorFactory object for the emission
-                distributions.
-            len_factory (StatisticAccumulatorFactory): StatisticAccumulatorFactory for the length distribution. Defaults
-                to NullAccumulatorFactory().
-            use_numba (bool): Default to True. Indicated if Numba is to be used for 'seq_' calls.
-            keys (Tuple[Optional[str],Optional[str], Optional[str]]): Set keys for initial states, state
-                transitions, and the emission distributions.
-            name (Optional[str]): Name for object.
-
-
+        Args:
+            factories: Factories for emission distributions.
+            len_factory: Factory for the length distribution. Defaults to NullAccumulatorFactory().
+            use_numba: Whether to use Numba for 'seq_' calls.
+            keys: Keys for initial states, transitions, and emissions.
+            name: Name for the object.
         """
         self.factories = factories
         self.use_numba = use_numba
@@ -1129,46 +1183,49 @@ class HiddenMarkovAccumulatorFactory(StatisticAccumulatorFactory):
         self.name = name
 
     def make(self) -> 'HiddenMarkovAccumulator':
+        """Creates a new HiddenMarkovAccumulator.
+
+        Returns:
+            HiddenMarkovAccumulator: A new accumulator instance.
+        """
         len_acc = self.len_factory.make() if self.len_factory is not None else None
         return HiddenMarkovAccumulator([self.factories[i].make() for i in range(len(self.factories))],
                                        len_accumulator=len_acc, use_numba=self.use_numba, keys=self.keys,
                                        name=self.name)
 
 class HiddenMarkovEstimator(ParameterEstimator):
-    """HiddenMarkovEstimator object for estimating HiddenMarkovDistribution for aggregated sufficient statistics.
+    """Estimator for HiddenMarkovDistribution from aggregated sufficient statistics.
 
-      Attributes:
-          estimators (List[ParameterEstimator]): Set ParameterEstimator objects for emission distributions.
-          len_estimator (ParameterEstimator): ParameterEstimator object for length distribution, set to NullEstimator
-              if None was passed.
-          pseudo_count (Tuple[Optional[float], Optional[float]]): Pseudo count for initial states and
-              state transitions. Defaults to Tuple of (None, None) if None was passed.
-          name (Optional[str]): Name for object instance.
-          keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for initial states, transitions counts, and
-              emission distributions. Defaults to Tuple of (None, None, None).
-          use_numba (bool): If True, Numba is used for sequence encoding and vectorized functions.
-
+    Attributes:
+        estimators (List[ParameterEstimator]): Estimators for emission distributions.
+        len_estimator (ParameterEstimator): Estimator for length distribution.
+        pseudo_count (Tuple[Optional[float], Optional[float]]): Pseudo counts for initial states and transitions.
+        name (Optional[str]): Name for the object instance.
+        keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for initial states, transitions, and emissions.
+        use_numba (bool): Whether to use Numba for sequence encoding and vectorized functions.
     """
 
-    def __init__(self, estimators: List[ParameterEstimator],
-                 len_estimator: Optional[ParameterEstimator] = NullEstimator(),
-                 pseudo_count: Optional[Tuple[Optional[float], Optional[float]]] = (None, None),
-                 name: Optional[str] = None,
-                 keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
-                 use_numba: bool = False) -> None:
-        """HiddenMarkovEstimator object.
+    def __init__(
+        self,
+        estimators: List[ParameterEstimator],
+        len_estimator: Optional[ParameterEstimator] = NullEstimator(),
+        pseudo_count: Optional[Tuple[Optional[float], Optional[float]]] = (None, None),
+        name: Optional[str] = None,
+        keys: Optional[Tuple[Optional[str], Optional[str], Optional[str]]] = (None, None, None),
+        use_numba: bool = False
+    ) -> None:
+        """Initializes HiddenMarkovEstimator.
 
-        Arguments:
-            estimators (List[ParameterEstimator]): Set ParameterEstimator objects for emission distributions.
-            len_estimator (ParameterEstimator): ParameterEstimator object for length distribution, set to NullEstimator
-                if None was passed.
-            pseudo_count (Tuple[Optional[float], Optional[float]]): Pseudo count for initial states and
-                state transitions. Defaults to Tuple of (None, None) if None was passed.
-            name (Optional[str]): Name for object instance.
-            keys (Tuple[Optional[str], Optional[str], Optional[str]]): Keys for initial states, transitions counts, and
-                emission distributions. Defaults to Tuple of (None, None, None).
-            use_numba (bool): If True, Numba is used for sequence encoding and vectorized functions.
+        Args:
+            estimators: Estimators for emission distributions.
+            len_estimator: Estimator for length distribution.
+            pseudo_count: Pseudo counts for initial states and transitions.
+            name: Name for the object instance.
+            keys: Keys for initial states, transitions, and emissions.
+            use_numba: Whether to use Numba for sequence encoding and vectorized functions.
 
+        Raises:
+            TypeError: If keys is not a tuple of three optional strings.
         """
         if (
             isinstance(keys, tuple)
@@ -1177,8 +1234,10 @@ class HiddenMarkovEstimator(ParameterEstimator):
         ):
             self.keys = keys
         else:
-            raise TypeError("HiddenMarkovEstimator requires keys (Tuple[Optional[str], Optional[str], Optional[str]]).")
-        
+            raise TypeError(
+                "HiddenMarkovEstimator requires keys (Tuple[Optional[str], Optional[str], Optional[str]])."
+            )
+
         self.num_states = len(estimators)
         self.estimators = estimators
         self.pseudo_count = pseudo_count if pseudo_count is not None else (None, None)
@@ -1187,14 +1246,32 @@ class HiddenMarkovEstimator(ParameterEstimator):
         self.name = name
         self.use_numba = use_numba
 
-    def accumulator_factory(self):
+    def accumulator_factory(self) -> HiddenMarkovAccumulatorFactory:
+        """Returns a factory for HiddenMarkovAccumulator.
+
+        Returns:
+            HiddenMarkovAccumulatorFactory: The accumulator factory.
+        """
         est_factories = [u.accumulator_factory() for u in self.estimators]
         len_factory = self.len_estimator.accumulator_factory()
-        return HiddenMarkovAccumulatorFactory(est_factories, len_factory, self.use_numba, self.keys, self.name)
+        return HiddenMarkovAccumulatorFactory(
+            est_factories, len_factory, self.use_numba, self.keys, self.name
+        )
 
-    def estimate(self, nobs: Optional[float],
-                 suff_stat: Tuple[int, np.ndarray, np.ndarray, np.ndarray, List[T1], Optional[T2]])\
-            -> 'HiddenMarkovModelDistribution':
+    def estimate(
+        self,
+        nobs: Optional[float],
+        suff_stat: Tuple[int, np.ndarray, np.ndarray, np.ndarray, List[T1], Optional[T2]]
+    ) -> 'HiddenMarkovModelDistribution':
+        """Estimates a HiddenMarkovModelDistribution from sufficient statistics.
+
+        Args:
+            nobs: Number of observations.
+            suff_stat: Sufficient statistics tuple.
+
+        Returns:
+            HiddenMarkovModelDistribution: The estimated distribution.
+        """
         num_states, init_counts, state_counts, trans_counts, topic_ss, len_ss = suff_stat
 
         len_dist = self.len_estimator.estimate(nobs, len_ss)
@@ -1214,7 +1291,6 @@ class HiddenMarkovEstimator(ParameterEstimator):
             transitions /= row_sum
         else:
             row_sum = trans_counts.sum(axis=1, keepdims=True)
-
             bad_rows = row_sum.flatten() == 0.0
 
             if np.any(bad_rows):
