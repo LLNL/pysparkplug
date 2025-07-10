@@ -57,10 +57,10 @@ class BinomialDistribution(SequenceEncodableProbabilityDistribution):
             Exception: If p is not in (0, 1) or n is not positive.
         """
         if p <= 0.0 or p >= 1.0 or np.isnan(p):
-            raise Exception('Binomial distribution requires p in (0, 1)')
+            raise Exception('Binomial distribution requires p in [0,1]')
         self.p = p
 
-        if n <= 0 or np.isinf(n) or np.isnan(n):
+        if n < 0 or np.isinf(n) or np.isnan(n):
             raise Exception('Binomial distribution requires n > 0.')
         self.n = n
 
