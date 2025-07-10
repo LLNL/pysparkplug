@@ -1282,7 +1282,7 @@ class HiddenMarkovDataEncoder(DataSequenceEncoder):
         The returned value rv is a Tuple[Tuple[....], T_topic, T_len], where the first tuple is given by a Tuple of
             rv[0][0] (int): Total number of observed emissions from all HMM sequences.
             rv[0][1] (List[Tuple[int, int]]): Contains bands for t^th observation in HMM sequences stored in 'seq_x'.
-            rv[0][2] (List[ndarray[int]]): List of numpy array on sequence indices that have a next observed emission.
+            rv[0][2] (List[np.ndarray]): List of numpy array on sequence indices that have a next observed emission.
             rv[0][3] (np.ndarray[int]): Numpy array of sequence lengths.
             rv[0][4] (np.ndarray[int]): 2-d matrix with rv[0][0] rows, and column length equal to the length of the
                 largest HMM sequence. This is used to store the index of seq_x corresponding to emission x[i][t]. A -1
@@ -1432,7 +1432,30 @@ class HiddenMarkovEncodedDataSequence(EncodedDataSequence):
 @numba.njit(
     'void(int32, int32[:], float64[:,:], float64[:], float64[:,:], float64[:], float64[:,:], float64[:,:], float64[:])',
     parallel=True, fastmath=True)
-def numba_seq_log_density(num_states, tz, prob_mat, init_pvec, tran_mat, max_ll, next_alpha_mat, alpha_buff_mat, out):
+def numba_seq_log_density(
+    num_states: int,
+    tz: np.ndarray,
+    prob_mat: np.ndarray,
+    init_pvec: np.ndarray,
+    tran_mat: np.ndarray,
+    max_ll: np.ndarray,
+    next_alpha_mat: np.ndarray,
+    alpha_buff_mat: np.ndarray,
+    out: np.ndarray
+) -> None:
+    """Vectorized computation of log-density for HMM sequences using the forward algorithm.
+
+    Args:
+        num_states (int): Number of hidden states.
+        tz (np.ndarray): Cumulative sum of sequence lengths.
+        prob_mat (np.ndarray): Observation likelihoods for each state.
+        init_pvec (np.ndarray): Initial state probabilities.
+        tran_mat (np.ndarray): State transition matrix.
+        max_ll (np.ndarray): Maximum log-likelihoods for numerical stability.
+        next_alpha_mat (np.ndarray): Buffer for forward probabilities.
+        alpha_buff_mat (np.ndarray): Buffer for intermediate forward probabilities.
+        out (np.ndarray): Output array for log-densities.
+    """
     for n in numba.prange(len(tz) - 1):
 
         s0 = tz[n]
@@ -1478,8 +1501,34 @@ def numba_seq_log_density(num_states, tz, prob_mat, init_pvec, tran_mat, max_ll,
 @numba.njit(
     'void(int32, int32[:], float64[:,:], float64[:], float64[:,:], float64[:], float64[:,:], float64[:,:], float64[:], '
     'float64[:], float64[:,:])')
-def numba_baum_welch(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alpha_loc, xi_acc, pi_acc, beta_buff,
-                     xi_buff):
+def numba_baum_welch(
+    num_states: int,
+    tz: np.ndarray,
+    prob_mat: np.ndarray,
+    init_pvec: np.ndarray,
+    tran_mat: np.ndarray,
+    weights: np.ndarray,
+    alpha_loc: np.ndarray,
+    xi_acc: np.ndarray,
+    pi_acc: np.ndarray,
+    beta_buff: np.ndarray,
+    xi_buff: np.ndarray
+) -> None:
+    """Baum-Welch forward-backward algorithm for HMM parameter estimation.
+
+    Args:
+        num_states (int): Number of hidden states.
+        tz (np.ndarray): Cumulative sum of sequence lengths.
+        prob_mat (np.ndarray): Observation likelihoods for each state.
+        init_pvec (np.ndarray): Initial state probabilities.
+        tran_mat (np.ndarray): State transition matrix.
+        weights (np.ndarray): Sequence weights.
+        alpha_loc (np.ndarray): Forward probabilities.
+        xi_acc (np.ndarray): Accumulator for transition probabilities.
+        pi_acc (np.ndarray): Accumulator for initial state probabilities.
+        beta_buff (np.ndarray): Buffer for backward probabilities.
+        xi_buff (np.ndarray): Buffer for transition probabilities.
+    """
     for n in range(len(tz) - 1):
 
         s0 = tz[n]
@@ -1494,7 +1543,6 @@ def numba_baum_welch(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alp
             temp = init_pvec[i] * prob_mat[s0, i]
             alpha_loc[s0, i] = temp
             alpha_sum += temp
-        # alpha_sum = temp if temp > alpha_sum else alpha_sum
         for i in range(num_states):
             alpha_loc[s0, i] /= alpha_sum
 
@@ -1509,7 +1557,6 @@ def numba_baum_welch(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alp
                 temp *= prob_mat[s, i]
                 alpha_loc[s, i] = temp
                 alpha_sum += temp
-            # alpha_sum = temp if temp > alpha_sum else alpha_sum
 
             for i in range(num_states):
                 alpha_loc[s, i] /= alpha_sum
@@ -1518,7 +1565,6 @@ def numba_baum_welch(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alp
             alpha_loc[s1 - 1, i] *= weight_loc
 
         beta_sum = 1
-        # beta_sum = 1/num_states
         prev_beta = np.empty(num_states, dtype=np.float64)
         prev_beta.fill(1 / num_states)
 
@@ -1546,7 +1592,6 @@ def numba_baum_welch(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alp
                 alpha_loc[s, i] *= temp_beta
                 gamma_buff += alpha_loc[s, i]
                 beta_sum += temp_beta
-            # beta_sum = temp_beta if temp_beta > beta_sum else beta_sum
 
             if gamma_buff > 0:
                 gamma_buff = weight_loc / gamma_buff
@@ -1567,7 +1612,30 @@ def numba_baum_welch(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alp
     'void(int64, int32[:], float64[:,:], float64[:], float64[:,:], float64[:], float64[:,:], float64[:,:,:], '
     'float64[:,:])',
     parallel=True, fastmath=True)
-def numba_baum_welch2(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alpha_loc, xi_acc, pi_acc):
+def numba_baum_welch2(
+    num_states: int,
+    tz: np.ndarray,
+    prob_mat: np.ndarray,
+    init_pvec: np.ndarray,
+    tran_mat: np.ndarray,
+    weights: np.ndarray,
+    alpha_loc: np.ndarray,
+    xi_acc: np.ndarray,
+    pi_acc: np.ndarray
+) -> None:
+    """Parallelized Baum-Welch forward-backward algorithm for HMM parameter estimation.
+
+    Args:
+        num_states (int): Number of hidden states.
+        tz (np.ndarray): Cumulative sum of sequence lengths.
+        prob_mat (np.ndarray): Observation likelihoods for each state.
+        init_pvec (np.ndarray): Initial state probabilities.
+        tran_mat (np.ndarray): State transition matrix.
+        weights (np.ndarray): Sequence weights.
+        alpha_loc (np.ndarray): Forward probabilities.
+        xi_acc (np.ndarray): Accumulator for transition probabilities.
+        pi_acc (np.ndarray): Accumulator for initial state probabilities.
+    """
     for n in numba.prange(len(tz) - 1):
 
         s0 = tz[n]
@@ -1585,7 +1653,6 @@ def numba_baum_welch2(num_states, tz, prob_mat, init_pvec, tran_mat, weights, al
             temp = init_pvec[i] * prob_mat[s0, i]
             alpha_loc[s0, i] = temp
             alpha_sum += temp
-        # alpha_sum = temp if temp > alpha_sum else alpha_sum
         for i in range(num_states):
             alpha_loc[s0, i] /= alpha_sum
 
@@ -1600,7 +1667,6 @@ def numba_baum_welch2(num_states, tz, prob_mat, init_pvec, tran_mat, weights, al
                 temp *= prob_mat[s, i]
                 alpha_loc[s, i] = temp
                 alpha_sum += temp
-            # alpha_sum = temp if temp > alpha_sum else alpha_sum
 
             for i in range(num_states):
                 alpha_loc[s, i] /= alpha_sum
@@ -1609,7 +1675,6 @@ def numba_baum_welch2(num_states, tz, prob_mat, init_pvec, tran_mat, weights, al
             alpha_loc[s1 - 1, i] *= weight_loc
 
         beta_sum = 1
-        # beta_sum = 1/num_states
         prev_beta = np.empty(num_states, dtype=np.float64)
         prev_beta.fill(1 / num_states)
 
@@ -1637,7 +1702,6 @@ def numba_baum_welch2(num_states, tz, prob_mat, init_pvec, tran_mat, weights, al
                 alpha_loc[s, i] *= temp_beta
                 gamma_buff += alpha_loc[s, i]
                 beta_sum += temp_beta
-            # beta_sum = temp_beta if temp_beta > beta_sum else beta_sum
 
             if gamma_buff > 0:
                 gamma_buff = weight_loc / gamma_buff
@@ -1658,7 +1722,30 @@ def numba_baum_welch2(num_states, tz, prob_mat, init_pvec, tran_mat, weights, al
     'void(int64, int32[:], float64[:,:], float64[:], float64[:,:], float64[:], float64[:,:], float64[:,:,:], '
     'float64[:,:])',
     parallel=True, fastmath=True)
-def numba_baum_welch_alphas(num_states, tz, prob_mat, init_pvec, tran_mat, weights, alpha_loc, xi_acc, pi_acc):
+def numba_baum_welch_alphas(
+    num_states: int,
+    tz: np.ndarray,
+    prob_mat: np.ndarray,
+    init_pvec: np.ndarray,
+    tran_mat: np.ndarray,
+    weights: np.ndarray,
+    alpha_loc: np.ndarray,
+    xi_acc: np.ndarray,
+    pi_acc: np.ndarray
+) -> None:
+    """Parallelized computation of forward probabilities (alphas) for HMM sequences.
+
+    Args:
+        num_states (int): Number of hidden states.
+        tz (np.ndarray): Cumulative sum of sequence lengths.
+        prob_mat (np.ndarray): Observation likelihoods for each state.
+        init_pvec (np.ndarray): Initial state probabilities.
+        tran_mat (np.ndarray): State transition matrix.
+        weights (np.ndarray): Sequence weights.
+        alpha_loc (np.ndarray): Forward probabilities.
+        xi_acc (np.ndarray): Accumulator for transition probabilities.
+        pi_acc (np.ndarray): Accumulator for initial state probabilities.
+    """
     for n in numba.prange(len(tz) - 1):
 
         s0 = tz[n]
@@ -1676,7 +1763,6 @@ def numba_baum_welch_alphas(num_states, tz, prob_mat, init_pvec, tran_mat, weigh
             temp = init_pvec[i] * prob_mat[s0, i]
             alpha_loc[s0, i] = temp
             alpha_sum += temp
-        # alpha_sum = temp if temp > alpha_sum else alpha_sum
         for i in range(num_states):
             alpha_loc[s0, i] /= alpha_sum
 
@@ -1691,47 +1777,7 @@ def numba_baum_welch_alphas(num_states, tz, prob_mat, init_pvec, tran_mat, weigh
                 temp *= prob_mat[s, i]
                 alpha_loc[s, i] = temp
                 alpha_sum += temp
-            # alpha_sum = temp if temp > alpha_sum else alpha_sum
 
             for i in range(num_states):
                 alpha_loc[s, i] /= alpha_sum
 
-
-@numba.njit('float64[:,:](int32[:], float64[:,:], float64[:,:])')
-def vec_bincount1(x, w, out):
-    """Numba bincount on the rows of matrix w for groups x.
-
-    Args:
-        x (np.ndarray[np.float64]): Group ids of rows
-        w (np.ndarray[np.float64]): N by S numpy array with rows corresponding to x
-        out (np.ndarray[np.float64]): Unique values in support of x by S.
-
-    Returns:
-        Numpy 2-d array.
-
-    """
-    for i in range(len(x)):
-        out[x[i], :] += w[i, :]
-    return out
-
-
-@numba.njit('float64[:,:](int32[:], float64[:,:], float64[:,:])')
-def vec_bincount2(x, w, out):
-    """Numba bincount on the rows of matrix w for groups x.
-
-    N = len(x)
-    S = number of states.
-    U = unique values in x can take on.
-
-    Args:
-        x (np.ndarray[np.float64]): Group ids of columns of w.
-        w (np.ndarray[np.float64]): S by N numpy array with cols corresponding to x
-        out (np.ndarray[np.float64]): S by U matrix.
-
-    Returns:
-        Numpy 2-d array.
-
-    """
-    for j in range(len(x)):
-        out[:, x[j]] += w[:, j]
-    return out
