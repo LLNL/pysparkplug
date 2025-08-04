@@ -1,11 +1,11 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.categorical import *
-from pysp.stats.binomial import * 
-from pysp.stats.dirac_length import * 
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.categorical import *
+from dml.stats.binomial import * 
+from dml.stats.dirac_length import * 
 import numpy as np
 
 def component_log_density_test(dist: DiracMixtureDistribution, encoder: DiracMixtureDataEncoder):

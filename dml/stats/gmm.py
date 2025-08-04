@@ -8,7 +8,7 @@ MixtureDistribution([GaussianDistribution()]*K), as you cannot key the variance 
 means in components.
 """
 import numpy as np
-from pysp.stats.pdist import (
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,
@@ -18,8 +18,8 @@ from pysp.stats.pdist import (
     EncodedDataSequence,
 )
 from numpy.random import RandomState
-import pysp.utils.vector as vec
-from pysp.arithmetic import maxrandint
+import dml.utils.vector as vec
+from dml.arithmetic import maxrandint
 from typing import List, Union, Tuple, Any, Optional, TypeVar, Sequence, Dict
 
 E = np.ndarray

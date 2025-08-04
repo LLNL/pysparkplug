@@ -8,11 +8,11 @@ with DMLearn.
 """
 import numpy as np
 import scipy.linalg
-from pysp.arithmetic import *
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.arithmetic import *
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DataSequenceEncoder, StatisticAccumulatorFactory, DistributionSampler, EncodedDataSequence
 from numpy.random import RandomState
-import pysp.utils.vector as vec
+import dml.utils.vector as vec
 
 from typing import Union, List, Dict, Optional, Any, Sequence, Tuple
 

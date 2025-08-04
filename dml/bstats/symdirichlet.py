@@ -1,8 +1,8 @@
 from typing import Optional, Union, List, Dict
 from collections import defaultdict
-from pysp.bstats.pdist import SequenceEncodableDistribution, ProbabilityDistribution
-from pysp.bstats.dirichlet import DirichletDistribution
-from pysp.bstats.nulldist import null_dist
+from dml.bstats.pdist import SequenceEncodableDistribution, ProbabilityDistribution
+from dml.bstats.dirichlet import DirichletDistribution
+from dml.bstats.nulldist import null_dist
 from scipy.special import gammaln
 import numpy as np
 

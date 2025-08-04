@@ -15,8 +15,8 @@ from typing import Any, Optional, Dict
 
 import numpy as np
 from numpy.random import RandomState
-import pysp.utils.vector as vec
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
+import dml.utils.vector as vec
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
     StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder, EncodedDataSequence
 
 

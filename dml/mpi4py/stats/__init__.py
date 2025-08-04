@@ -28,7 +28,7 @@ import pandas as pd
 from numpy.random import RandomState
 from mpi4py import MPI
 
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DataSequenceEncoder, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DataSequenceEncoder, \
     EncodedDataSequence
 
 

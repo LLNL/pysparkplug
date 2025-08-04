@@ -1,9 +1,9 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.intsetdist import *
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.intsetdist import *
 import numpy as np
 import pytest 
 

@@ -23,32 +23,32 @@ __all__ = ['BernoulliDistribution', 'BernoulliEstimator', 'BernoulliSampler',
 
 from typing import Any, Tuple, Sequence, Dict, Optional, Union, List
 
-from pysp.arithmetic import *
+from dml.arithmetic import *
 
-from pysp.bstats.pdist import ParameterEstimator, DataSequenceEncoder, EncodedDataSequence, ProbabilityDistribution
+from dml.bstats.pdist import ParameterEstimator, DataSequenceEncoder, EncodedDataSequence, ProbabilityDistribution
 
-from pysp.bstats.beta         import BetaDistribution, BetaSampler
-from pysp.bstats.bernoulli    import BernoulliDistribution, BernoulliEstimator, BernoulliSampler
-from pysp.bstats.categorical  import CategoricalDistribution, CategoricalEstimator, CategoricalSampler
-from pysp.bstats.composite    import CompositeDistribution, CompositeEstimator, CompositeSampler
-from pysp.bstats.catdirichlet import DictDirichletDistribution
-from pysp.bstats.dirichlet    import DirichletDistribution, DirichletEstimator, DirichletSampler
-from pysp.bstats.dmvn         import DiagonalGaussianDistribution, DiagonalGaussianEstimator, DiagonalGaussianSampler
-from pysp.bstats.exponential  import ExponentialDistribution, ExponentialEstimator, ExponentialSampler
-from pysp.bstats.gaussian     import GaussianDistribution, GaussianEstimator, GaussianSampler
-from pysp.bstats.gamma        import GammaDistribution, GammaEstimator, GammaSampler
-from pysp.bstats.geometric    import GeometricDistribution, GeometricEstimator, GeometricSampler
-from pysp.bstats.ignored      import IgnoredDistribution, IgnoredEstimator, IgnoredSampler
-from pysp.bstats.intrange     import IntegerCategoricalDistribution, IntegerCategoricalEstimator, IntegerCategoricalSampler
-from pysp.bstats.mixture      import MixtureDistribution, MixtureEstimator, MixtureSampler
-from pysp.bstats.mvngamma     import MultivariateNormalGammaDistribution, MultivariateNormalGammaSampler
-from pysp.bstats.nulldist     import NullDistribution, NullEstimator, NullSampler
-from pysp.bstats.optional     import OptionalDistribution, OptionalEstimator, OptionalSampler
-from pysp.bstats.poisson      import PoissonDistribution, PoissonEstimator, PoissonSampler
-from pysp.bstats.sequence     import SequenceDistribution, SequenceEstimator, SequenceSampler
-from pysp.bstats.setdist      import BernoulliSetDistribution, BernoulliSetEstimator, BernoulliSetSampler
+from dml.bstats.beta         import BetaDistribution, BetaSampler
+from dml.bstats.bernoulli    import BernoulliDistribution, BernoulliEstimator, BernoulliSampler
+from dml.bstats.categorical  import CategoricalDistribution, CategoricalEstimator, CategoricalSampler
+from dml.bstats.composite    import CompositeDistribution, CompositeEstimator, CompositeSampler
+from dml.bstats.catdirichlet import DictDirichletDistribution
+from dml.bstats.dirichlet    import DirichletDistribution, DirichletEstimator, DirichletSampler
+from dml.bstats.dmvn         import DiagonalGaussianDistribution, DiagonalGaussianEstimator, DiagonalGaussianSampler
+from dml.bstats.exponential  import ExponentialDistribution, ExponentialEstimator, ExponentialSampler
+from dml.bstats.gaussian     import GaussianDistribution, GaussianEstimator, GaussianSampler
+from dml.bstats.gamma        import GammaDistribution, GammaEstimator, GammaSampler
+from dml.bstats.geometric    import GeometricDistribution, GeometricEstimator, GeometricSampler
+from dml.bstats.ignored      import IgnoredDistribution, IgnoredEstimator, IgnoredSampler
+from dml.bstats.intrange     import IntegerCategoricalDistribution, IntegerCategoricalEstimator, IntegerCategoricalSampler
+from dml.bstats.mixture      import MixtureDistribution, MixtureEstimator, MixtureSampler
+from dml.bstats.mvngamma     import MultivariateNormalGammaDistribution, MultivariateNormalGammaSampler
+from dml.bstats.nulldist     import NullDistribution, NullEstimator, NullSampler
+from dml.bstats.optional     import OptionalDistribution, OptionalEstimator, OptionalSampler
+from dml.bstats.poisson      import PoissonDistribution, PoissonEstimator, PoissonSampler
+from dml.bstats.sequence     import SequenceDistribution, SequenceEstimator, SequenceSampler
+from dml.bstats.setdist      import BernoulliSetDistribution, BernoulliSetEstimator, BernoulliSetSampler
 
-from pysp.bstats.dpm import DirichletProcessMixtureDistribution, DirichletProcessMixtureEstimator, DirichletProcessMixtureSampler
+from dml.bstats.dpm import DirichletProcessMixtureDistribution, DirichletProcessMixtureEstimator, DirichletProcessMixtureSampler
 
 
 import numpy as np

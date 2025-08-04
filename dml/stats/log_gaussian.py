@@ -6,8 +6,8 @@ LogGaussianEstimator, and the LogGaussianDataEncoder classes for use with DMLear
 """
 import numpy as np
 from numpy.random import RandomState
-from pysp.arithmetic import *
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
+from dml.arithmetic import *
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
     StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder, EncodedDataSequence
 from typing import Optional, Tuple, List, Callable, Dict, Union, Any
 

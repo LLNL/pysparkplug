@@ -1,7 +1,7 @@
 from typing import Optional
 
-from pysp.stats.pdist import ProbabilityDistribution
-from pysp.utils.special import gammaln, betaln, digamma, beta
+from dml.stats.pdist import ProbabilityDistribution
+from dml.utils.special import gammaln, betaln, digamma, beta
 import numpy as np
 import scipy.integrate
 

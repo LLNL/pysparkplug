@@ -11,9 +11,9 @@ from typing import Any, Tuple, Sequence, Optional, List
 import numpy as np
 from numpy.random import RandomState
 from mpi4py import MPI
-from pysp.bstats import *
-from pysp.arithmetic import *
-from pysp.bstats.pdist import ParameterEstimator, EncodedDataSequence, ProbabilityDistribution
+from dml.bstats import *
+from dml.arithmetic import *
+from dml.bstats.pdist import ParameterEstimator, EncodedDataSequence, ProbabilityDistribution
 
 
 def seq_encode_mpi(

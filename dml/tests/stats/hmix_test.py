@@ -1,12 +1,12 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.geometric import *
-from pysp.stats.gaussian import * 
-from pysp.stats.hmixture import * 
-from pysp.stats.categorical import * 
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.geometric import *
+from dml.stats.gaussian import * 
+from dml.stats.hmixture import * 
+from dml.stats.categorical import * 
 import numpy as np
 
 def component_log_density_test(dist, encoder):

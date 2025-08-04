@@ -8,8 +8,8 @@ import numpy as np
 from numpy.random import RandomState
 from scipy.special import gammaln
 from typing import Tuple, List, Optional, Union, Dict, Any
-from pysp.arithmetic import *
-from pysp.stats.pdist import (
+from dml.arithmetic import *
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,
@@ -18,7 +18,7 @@ from pysp.stats.pdist import (
     DataSequenceEncoder,
     EncodedDataSequence,
 )
-from pysp.utils.special import digamma, trigamma
+from dml.utils.special import digamma, trigamma
 
 
 class GammaDistribution(SequenceEncodableProbabilityDistribution):

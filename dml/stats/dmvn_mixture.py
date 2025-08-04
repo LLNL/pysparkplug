@@ -8,7 +8,7 @@ DiagonalGaussianEstimator(tied=True) sets the covariance of each mixture compone
 
 import numba
 import numpy as np
-from pysp.stats.pdist import (
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,
@@ -19,8 +19,8 @@ from pysp.stats.pdist import (
 )
 from numpy.random import RandomState
 
-import pysp.utils.vector as vec
-from pysp.arithmetic import maxrandint
+import dml.utils.vector as vec
+from dml.arithmetic import maxrandint
 from typing import List, Union, Tuple, Any, Optional, TypeVar, Sequence, Dict
 
 E = np.ndarray

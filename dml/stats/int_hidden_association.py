@@ -28,13 +28,13 @@ import math
 import numba
 import numpy as np
 
-from pysp.arithmetic import *
-from pysp.arithmetic import maxrandint
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.arithmetic import *
+from dml.arithmetic import maxrandint
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory, EncodedDataSequence
-from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
+from dml.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
     NullAccumulatorFactory
-from pysp.utils.optsutil import count_by_value
+from dml.utils.optsutil import count_by_value
 
 from typing import Optional, List, Tuple, Optional, Any, Dict, Union, Sequence, TypeVar
 

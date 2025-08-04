@@ -1,8 +1,8 @@
 """Test integration with UMAP."""
 import os
 import pickle
-from pysp.stats import *
-from pysp.utils.humap import humap
+from dml.stats import *
+from dml.utils.humap import humap
 import numpy as np
 
 DATA_DIR = "pysp/tests/data"

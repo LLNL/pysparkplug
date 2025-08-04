@@ -4,8 +4,8 @@ as well as the use of composite mixtures. """
 import os
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
-from pysp.stats import *
-from pysp.utils.estimation import optimize, partition_data
+from dml.stats import *
+from dml.utils.estimation import optimize, partition_data
 
 if __name__ == '__main__':
     rng = np.random.RandomState(1)

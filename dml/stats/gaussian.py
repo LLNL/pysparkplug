@@ -8,8 +8,8 @@ Data type: float
 
 import numpy as np
 from numpy.random import RandomState
-from pysp.arithmetic import *
-from pysp.stats.pdist import (
+from dml.arithmetic import *
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,

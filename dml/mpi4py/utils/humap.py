@@ -3,10 +3,10 @@ from typing import Sequence, Optional, Tuple, TypeVar, Any, Dict
 from mpi4py import MPI
 import numpy as np
 from numpy.random import RandomState
-from pysp.mpi4py.utils.automatic import get_dpm_mixture_mpi
-from pysp.bstats import *
-from pysp.bstats import MixtureDistribution
-from pysp.bstats.pdist import ParameterEstimator
+from dml.mpi4py.utils.automatic import get_dpm_mixture_mpi
+from dml.bstats import *
+from dml.bstats import MixtureDistribution
+from dml.bstats.pdist import ParameterEstimator
 import umap 
 from umap import UMAP
 

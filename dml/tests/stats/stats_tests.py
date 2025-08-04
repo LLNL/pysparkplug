@@ -1,14 +1,14 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 
-from pysp.stats import *
+from dml.stats import *
 import numpy as np
-from pysp.utils.estimation import empirical_kl_divergence
-from pysp.stats import SequenceEncodableProbabilityDistribution, DataSequenceEncoder
+from dml.utils.estimation import empirical_kl_divergence
+from dml.stats import SequenceEncodableProbabilityDistribution, DataSequenceEncoder
 import abc
 import unittest
 import pytest
-import pysp.utils.vector as vec
+import dml.utils.vector as vec
 
 def str_eval_test(dist):    
     dist2 = eval(str(dist))

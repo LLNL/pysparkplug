@@ -1,18 +1,18 @@
 from typing import Sequence, Optional, Union, Any, Tuple
 from typing import TypeVar, NoReturn, Dict, List
-from pysp.arithmetic import *
-from pysp.bstats.pdist import (SequenceEncodableAccumulator,
+from dml.arithmetic import *
+from dml.bstats.pdist import (SequenceEncodableAccumulator,
                                ParameterEstimator,
                                DataFrameEncodableAccumulator,
                                ProbabilityDistribution,
                                EncodedDataSequence,
                                DataSequenceEncoder)
-from pysp.bstats.catdirichlet import DictDirichletDistribution
-from pysp.bstats.symdirichlet import SymmetricDirichletDistribution
-from pysp.bstats.dirichlet import DirichletDistribution
+from dml.bstats.catdirichlet import DictDirichletDistribution
+from dml.bstats.symdirichlet import SymmetricDirichletDistribution
+from dml.bstats.dirichlet import DirichletDistribution
 
 from collections import defaultdict
-from pysp.bstats.nulldist import null_dist
+from dml.bstats.nulldist import null_dist
 import numpy as np
 from scipy.special import digamma
 

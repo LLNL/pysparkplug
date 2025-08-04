@@ -1,6 +1,6 @@
 from typing import Optional, Any, TypeVar, Sequence
-from pysp.arithmetic import *
-from pysp.stats.pdist import (
+from dml.arithmetic import *
+from dml.stats.pdist import (
         SequenceEncodableProbabilityDistribution,
         SequenceEncodableStatisticAccumulator,
         ParameterEstimator,
@@ -8,7 +8,7 @@ from pysp.stats.pdist import (
         EncodedDataSequence,
         DataSequenceEncoder)
 from numpy.random import RandomState
-from pysp.bstats.nulldist import NullDistribution
+from dml.bstats.nulldist import NullDistribution
 import numpy as np
 
 T = TypeVar('T')

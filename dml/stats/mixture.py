@@ -13,12 +13,12 @@ If component distribution P(Y|Z=k) has data type (T), then the Mixture distribut
 
 """
 import numpy as np
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
     StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder, EncodedDataSequence
 from numpy.random import RandomState
 
-import pysp.utils.vector as vec
-from pysp.arithmetic import maxrandint
+import dml.utils.vector as vec
+from dml.arithmetic import maxrandint
 from typing import Sequence, Union, Tuple, Any, Optional, TypeVar, Sequence, Dict
 
 

@@ -6,9 +6,9 @@ import os
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 
 import numpy as np
-from pysp.stats import *
-from pysp.utils.estimation import optimize
-from pysp.utils.optsutil import get_parent_directory
+from dml.stats import *
+from dml.utils.estimation import optimize
+from dml.utils.optsutil import get_parent_directory
 
 if __name__ == '__main__':
 

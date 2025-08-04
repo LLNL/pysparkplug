@@ -10,8 +10,8 @@ f(x) = p*F(X=x) + (1-p) * Delta(v)
 """
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
-from pysp.stats import *
-from pysp.utils.estimation import optimize
+from dml.stats import *
+from dml.utils.estimation import optimize
 from numpy.random import RandomState
 
 if __name__ == '__main__':

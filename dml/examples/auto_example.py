@@ -3,8 +3,8 @@ import os
 import numpy as np
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 
-from pysp.stats import *
-from pysp.utils.automatic import get_estimator
+from dml.stats import *
+from dml.utils.automatic import get_estimator
 
 if __name__ == '__main__':
     data = [(1, None, 'a', [('a', 1), ('b', 2)]), (3, 2, 'b', [('a', 1), ('b', 2), ('c', 3)]),

@@ -5,8 +5,8 @@ import pytest
 import pickle
 from mpi4py import MPI
 import numpy as np
-from pysp.mpi4py.utils.automatic import get_dpm_mixture_mpi
-from pysp.bstats import *
+from dml.mpi4py.utils.automatic import get_dpm_mixture_mpi
+from dml.bstats import *
 
 
 @pytest.mark.parametrize("case_id", [0, 1])

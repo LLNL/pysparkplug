@@ -26,13 +26,13 @@ Note: To use this distribution, convert your words and authors of the corpus to 
 import numba
 import numpy as np
 from numpy.random import RandomState
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, StatisticAccumulatorFactory, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, StatisticAccumulatorFactory, \
     SequenceEncodableStatisticAccumulator, DataSequenceEncoder, DistributionSampler, ParameterEstimator, \
     EncodedDataSequence
-from pysp.stats.null_dist import NullDistribution, NullEstimator, NullDataEncoder, NullAccumulator, \
+from dml.stats.null_dist import NullDistribution, NullEstimator, NullDataEncoder, NullAccumulator, \
     NullAccumulatorFactory
-from pysp.utils.optsutil import count_by_value
-from pysp.arithmetic import maxrandint
+from dml.utils.optsutil import count_by_value
+from dml.arithmetic import maxrandint
 
 from typing import List, Optional, Sequence, Tuple, Union, Any, TypeVar, Dict
 

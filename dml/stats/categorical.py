@@ -7,7 +7,7 @@ CategoricalEstimator, and the CategoricalDataEncoder classes for use with DMLear
 import numpy as np
 import math
 from typing import Dict, Optional, Tuple, Any, TypeVar, Union, List, Sequence
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
     StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder, EncodedDataSequence
 from numpy.random import RandomState
 

@@ -1,7 +1,7 @@
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.int_plsi import *
-from pysp.stats.categorical import * 
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.int_plsi import *
+from dml.stats.categorical import * 
 import numpy as np
 import pytest 
 

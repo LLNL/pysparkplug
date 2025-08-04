@@ -4,8 +4,8 @@ os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pytest
 import pickle
 import numpy as np
-from pysp.utils.automatic import get_dpm_mixture, get_estimator
-from pysp.bstats import *
+from dml.utils.automatic import get_dpm_mixture, get_estimator
+from dml.bstats import *
 
 DATA_DIR = "pysp/tests/data"
 ANSWER_DIR = "pysp/tests/answerkeys"

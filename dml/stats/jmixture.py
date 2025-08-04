@@ -15,14 +15,14 @@ sampling X_2 from g_j() (data type T1) given X_1 was sampled from f_i().
 
 
 """
-from pysp.arithmetic import *
+from dml.arithmetic import *
 from numpy.random import RandomState
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, StatisticAccumulatorFactory, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, StatisticAccumulatorFactory, \
     SequenceEncodableStatisticAccumulator, DataSequenceEncoder, DistributionSampler, ParameterEstimator, \
     EncodedDataSequence
 import numpy as np
-import pysp.utils.vector as vec
-from pysp.arithmetic import maxrandint
+import dml.utils.vector as vec
+from dml.arithmetic import maxrandint
 
 from typing import Tuple, Union, Any, Optional, TypeVar, Sequence, List, Dict
 

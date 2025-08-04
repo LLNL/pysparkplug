@@ -7,8 +7,8 @@ import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pickle
 import pytest
-from pysp.stats import *
-from pysp.mpi4py.utils.estimation import optimize_mpi, best_of_mpi
+from dml.stats import *
+from dml.mpi4py.utils.estimation import optimize_mpi, best_of_mpi
 import numpy as np
 from mpi4py import MPI
 

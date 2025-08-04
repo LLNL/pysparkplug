@@ -7,8 +7,8 @@ if not USE_NUMBA:
     os.environ['NUMBA_DISABLE_JIT'] = '1'
 
 
-from pysp.stats import *
-from pysp.utils.estimation import best_of, partition_data
+from dml.stats import *
+from dml.utils.estimation import best_of, partition_data
 
 if __name__ == '__main__':
     n = int(1e4)

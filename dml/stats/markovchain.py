@@ -17,13 +17,13 @@ Note if len(x) = 0, only log(P_len(0)) is returned.
 
 """
 import numpy as np
-from pysp.arithmetic import *
-from pysp.arithmetic import maxrandint
+from dml.arithmetic import *
+from dml.arithmetic import maxrandint
 from numpy.random import RandomState
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory, EncodedDataSequence
 
-from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullDataEncoder, NullEstimator, \
+from dml.stats.null_dist import NullDistribution, NullAccumulator, NullDataEncoder, NullEstimator, \
     NullAccumulatorFactory
 
 from scipy.sparse import dok_matrix

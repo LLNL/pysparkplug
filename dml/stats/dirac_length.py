@@ -18,8 +18,8 @@ from typing import List, Union, Tuple, Any, Optional, TypeVar, Sequence, Dict
 import numpy as np
 from numpy.random import RandomState
 
-from pysp.arithmetic import maxrandint
-from pysp.stats.pdist import (
+from dml.arithmetic import maxrandint
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,

@@ -1,14 +1,14 @@
-from pysp.arithmetic import *
-from pysp.bstats.pdist import ProbabilityDistribution, StatisticAccumulator, ParameterEstimator
-from pysp.utils.special import digamma, gammaln, betaln
-from pysp.bstats.gamma import GammaDistribution
-from pysp.bstats.beta import BetaDistribution
-from pysp.bstats.sequence import SequenceDistribution
-from pysp.bstats.composite import CompositeDistribution
-from pysp.bstats.nulldist import null_dist
+from dml.arithmetic import *
+from dml.bstats.pdist import ProbabilityDistribution, StatisticAccumulator, ParameterEstimator
+from dml.utils.special import digamma, gammaln, betaln
+from dml.bstats.gamma import GammaDistribution
+from dml.bstats.beta import BetaDistribution
+from dml.bstats.sequence import SequenceDistribution
+from dml.bstats.composite import CompositeDistribution
+from dml.bstats.nulldist import null_dist
 from numpy.random import RandomState
 import numpy as np
-import pysp.utils.vector as vec
+import dml.utils.vector as vec
 
 def cbg(x,s1,s2):
     return np.log(s1) + s1*np.log(s2) - (s1+1)*np.log(s2-np.log1p(-x)) - np.log1p(-x)

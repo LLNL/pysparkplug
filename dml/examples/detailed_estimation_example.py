@@ -2,8 +2,8 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
-from pysp.stats import *
-from pysp.utils.estimation import empirical_kl_divergence, partition_data
+from dml.stats import *
+from dml.utils.estimation import empirical_kl_divergence, partition_data
 
 if __name__ == '__main__':
 

@@ -32,14 +32,14 @@ the unique values of Y = (Y_1,...,Y_N) in V as well.
 """
 import numpy as np
 import math
-from pysp.arithmetic import *
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.arithmetic import *
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, StatisticAccumulatorFactory, DistributionSampler, DataSequenceEncoder, EncodedDataSequence
-from pysp.utils.optsutil import count_by_value
-from pysp.arithmetic import maxrandint
-from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
+from dml.utils.optsutil import count_by_value
+from dml.arithmetic import maxrandint
+from dml.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
     NullAccumulatorFactory
-from pysp.stats.conditional import ConditionalDistribution, ConditionalDistributionAccumulator, \
+from dml.stats.conditional import ConditionalDistribution, ConditionalDistributionAccumulator, \
     ConditionalDistributionEstimator, ConditionalDistributionAccumulatorFactory
 from typing import TypeVar, Dict, List, Sequence, Any, Optional, Tuple, Union
 

@@ -12,9 +12,9 @@ from typing import List, Union, Tuple, Optional, Dict, Any
 import numpy as np
 from numpy.random import RandomState
 
-import pysp.utils.vector as vec
-from pysp.arithmetic import *
-from pysp.stats.pdist import SequenceEncodableStatisticAccumulator, SequenceEncodableProbabilityDistribution, \
+import dml.utils.vector as vec
+from dml.arithmetic import *
+from dml.stats.pdist import SequenceEncodableStatisticAccumulator, SequenceEncodableProbabilityDistribution, \
     ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory, EncodedDataSequence
 
 

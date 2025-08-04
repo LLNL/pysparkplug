@@ -9,8 +9,8 @@ Data type (int): The geometric distribution with probability of success p, has d
 
 """
 import numpy as np
-from pysp.arithmetic import *
-from pysp.stats.pdist import (
+from dml.arithmetic import *
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,

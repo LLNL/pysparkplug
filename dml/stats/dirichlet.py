@@ -15,9 +15,9 @@ Provides methods for parameter estimation, sampling, and encoding of Dirichlet-d
 import numpy as np
 import sys
 from numpy.random import RandomState
-from pysp.utils.special import digamma, digammainv, one
+from dml.utils.special import digamma, digammainv, one
 from scipy.special import gammaln
-from pysp.stats.pdist import (
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,

@@ -1,9 +1,9 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullAccumulatorFactory, NullDataEncoder, NullEstimator
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.null_dist import NullDistribution, NullAccumulator, NullAccumulatorFactory, NullDataEncoder, NullEstimator
 import numpy as np
 import unittest
 import pytest 

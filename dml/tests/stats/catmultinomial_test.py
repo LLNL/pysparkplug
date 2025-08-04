@@ -1,12 +1,12 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.catmultinomial import * 
-from pysp.stats.binomial import BinomialDataEncoder, BinomialAccumulator, BinomialAccumulatorFactory
-from pysp.stats.categorical import CategoricalDataEncoder, CategoricalAccumulator, CategoricalAccumulatorFactory
-from pysp.stats.null_dist import NullDataEncoder, NullAccumulator
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.catmultinomial import * 
+from dml.stats.binomial import BinomialDataEncoder, BinomialAccumulator, BinomialAccumulatorFactory
+from dml.stats.categorical import CategoricalDataEncoder, CategoricalAccumulator, CategoricalAccumulatorFactory
+from dml.stats.null_dist import NullDataEncoder, NullAccumulator
 import numpy as np
 import pytest 
 

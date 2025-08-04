@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 import time
-from pysp.bstats import initialize, seq_estimate, seq_log_density_sum, seq_encode, seq_log_density
+from dml.bstats import initialize, seq_estimate, seq_log_density_sum, seq_encode, seq_log_density
 
 def empirical_kl_divergence(dist1, dist2, enc_data):
 

@@ -2,8 +2,8 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
-from pysp.stats import *
-from pysp.utils.htsne import htsne
+from dml.stats import *
+from dml.utils.htsne import htsne
 
 def sample_with_labels(size, mixture_comps, mixture_weights, rng):
     seeds = rng.randint(low=0, high=2**32, size=len(mixture_comps))

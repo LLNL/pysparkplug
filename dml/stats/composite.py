@@ -10,7 +10,7 @@ must be compatible with data type T_k.
 
 import numpy as np
 from numpy.random import RandomState
-from pysp.stats.pdist import (
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,
@@ -20,7 +20,7 @@ from pysp.stats.pdist import (
     EncodedDataSequence,
 )
 from typing import Optional, List, Union, Any, Tuple, Sequence, Dict
-from pysp.arithmetic import maxrandint
+from dml.arithmetic import maxrandint
 
 
 class CompositeDistribution(SequenceEncodableProbabilityDistribution):

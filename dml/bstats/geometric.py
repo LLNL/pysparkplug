@@ -1,7 +1,7 @@
 from typing import Optional
-from pysp.bstats.pdist import ProbabilityDistribution, StatisticAccumulator, ParameterEstimator
-from pysp.bstats.beta import BetaDistribution
-from pysp.bstats.nulldist import NullDistribution, null_dist
+from dml.bstats.pdist import ProbabilityDistribution, StatisticAccumulator, ParameterEstimator
+from dml.bstats.beta import BetaDistribution
+from dml.bstats.nulldist import NullDistribution, null_dist
 from numpy.random import RandomState
 from scipy.special import digamma
 import mpmath

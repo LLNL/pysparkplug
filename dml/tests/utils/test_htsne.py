@@ -2,8 +2,8 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pickle
-from pysp.stats import *
-from pysp.utils.htsne import htsne
+from dml.stats import *
+from dml.utils.htsne import htsne
 import numpy as np
 
 DATA_DIR = "pysp/tests/data"

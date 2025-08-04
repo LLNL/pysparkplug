@@ -2,8 +2,8 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
-from pysp.stats import *
-from pysp.utils.estimation import partition_data, best_of, empirical_kl_divergence
+from dml.stats import *
+from dml.utils.estimation import partition_data, best_of, empirical_kl_divergence
 
 if __name__ == '__main__':
     rng = np.random.RandomState(1)

@@ -3,8 +3,8 @@ os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
 import numpy as np
 import time
-from pysp.stats import *
-from pysp.utils.estimation import best_of, partition_data, iterate, optimize
+from dml.stats import *
+from dml.utils.estimation import best_of, partition_data, iterate, optimize
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ import scipy.linalg
 import scipy.special
 
 
-from pysp.arithmetic import *
+from dml.arithmetic import *
 
 @overload
 def gammaln(x: np.ndarray) -> np.ndarray: ...

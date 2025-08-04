@@ -1,10 +1,10 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.poisson import *
-from pysp.stats.optional import * 
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.poisson import *
+from dml.stats.optional import * 
 import numpy as np
 import pytest 
 

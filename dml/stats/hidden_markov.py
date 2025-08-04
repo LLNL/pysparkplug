@@ -31,15 +31,15 @@ import numba
 import numpy as np
 import math
 from numpy.random import RandomState
-import pysp.utils.vector as vec
-from pysp.arithmetic import *
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+import dml.utils.vector as vec
+from dml.arithmetic import *
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory, EncodedDataSequence
-from pysp.stats.markovchain import MarkovChainDistribution
-from pysp.stats.mixture import MixtureDistribution
-from pysp.stats.null_dist import NullDistribution, NullAccumulatorFactory, NullEstimator, NullDataEncoder, \
+from dml.stats.markovchain import MarkovChainDistribution
+from dml.stats.mixture import MixtureDistribution
+from dml.stats.null_dist import NullDistribution, NullAccumulatorFactory, NullEstimator, NullDataEncoder, \
     NullAccumulator
-from pysp.arithmetic import maxrandint
+from dml.arithmetic import maxrandint
 
 from typing import List, Any, Tuple, Sequence, Union, Optional, TypeVar, Set, Dict
 

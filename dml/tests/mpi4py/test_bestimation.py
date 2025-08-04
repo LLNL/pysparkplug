@@ -6,10 +6,10 @@ All tests are run with mpiexec -n 4 pytest test_bestimation
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pickle
-from pysp.bstats import *
-from pysp.mpi4py.bstats import *
-from pysp.mpi4py.bstats import *
-from pysp.mpi4py.utils.bestimation import optimize_mpi
+from dml.bstats import *
+from dml.mpi4py.bstats import *
+from dml.mpi4py.bstats import *
+from dml.mpi4py.utils.bestimation import optimize_mpi
 import numpy as np
 from mpi4py import MPI
 

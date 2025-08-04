@@ -1,7 +1,7 @@
 from typing import Optional, Union, List, Dict, Any
 
-from pysp.bstats.pdist import ProbabilityDistribution
-from pysp.utils.special import gammaln, digamma
+from dml.bstats.pdist import ProbabilityDistribution
+from dml.utils.special import gammaln, digamma
 import numpy as np
 
 

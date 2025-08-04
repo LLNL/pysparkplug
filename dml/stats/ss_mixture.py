@@ -19,12 +19,12 @@ Note: seq_initialize() is not well implemented.
 import numpy as np
 from numpy.random import RandomState
 
-import pysp.utils.vector as vec
-from pysp.arithmetic import *
-from pysp.arithmetic import maxrandint
-from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
+import dml.utils.vector as vec
+from dml.arithmetic import *
+from dml.arithmetic import maxrandint
+from dml.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
     NullAccumulatorFactory
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory, EncodedDataSequence
 
 from typing import Sequence, Tuple, List, Dict, Any, Optional, TypeVar, Union

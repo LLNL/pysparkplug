@@ -6,7 +6,7 @@ ConditionalSampler, and DistributionSampler for classes of the pysp.stats.
 import math
 import numpy as np
 from abc import abstractmethod
-from pysp.arithmetic import *
+from dml.arithmetic import *
 from typing import TypeVar, Optional, Any, Generic, Dict
 
 SS = TypeVar('SS')

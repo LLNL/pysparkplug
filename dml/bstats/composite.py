@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Optional, Sequence, Tuple, Any
-from pysp.arithmetic import maxint
+from dml.arithmetic import maxint
 from numpy.random import RandomState
-from pysp.bstats.pdist import (ParameterEstimator,
+from dml.bstats.pdist import (ParameterEstimator,
                                ProbabilityDistribution,
                                StatisticAccumulator,
                                SequenceEncodableAccumulator,

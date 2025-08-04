@@ -4,13 +4,13 @@ import numba
 import numpy as np
 from numpy.random import RandomState
 
-import pysp.utils.vector as vec
-from pysp.arithmetic import *
-from pysp.arithmetic import maxrandint
-from pysp.stats.markovchain import MarkovChainDistribution
-from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
+import dml.utils.vector as vec
+from dml.arithmetic import *
+from dml.arithmetic import maxrandint
+from dml.stats.markovchain import MarkovChainDistribution
+from dml.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
     NullAccumulatorFactory
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory, EncodedDataSequence
 
 from typing import Optional, Dict, Union, List, Sequence, TypeVar, Tuple

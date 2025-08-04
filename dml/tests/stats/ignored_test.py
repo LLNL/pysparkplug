@@ -1,11 +1,11 @@
 import os
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 
-from pysp.tests.stats.stats_tests import * 
-from pysp.stats import *
-from pysp.stats.geometric import *
-from pysp.stats.gaussian import *
-from pysp.stats.ignored import *
+from dml.tests.stats.stats_tests import * 
+from dml.stats import *
+from dml.stats.geometric import *
+from dml.stats.gaussian import *
+from dml.stats.ignored import *
 import numpy as np
 
 class IgnoredDistributionTestCase(StatsTestClass):

@@ -2,10 +2,10 @@
 from typing import Sequence, Optional, Tuple, TypeVar, Any, Dict
 import numpy as np
 from numpy.random import RandomState
-from pysp.utils.automatic import get_dpm_mixture
-from pysp.bstats import *
-from pysp.bstats import MixtureDistribution
-from pysp.bstats.pdist import ParameterEstimator
+from dml.utils.automatic import get_dpm_mixture
+from dml.bstats import *
+from dml.bstats import MixtureDistribution
+from dml.bstats.pdist import ParameterEstimator
 import umap 
 from umap import UMAP
 

@@ -1,7 +1,7 @@
 from pyspark import SparkContext, SparkConf
-from pysp.stats import *
-from pysp.stats.rdd_sampler import sample_rdd
-from pysp.utils.estimation import best_of
+from dml.stats import *
+from dml.stats.rdd_sampler import sample_rdd
+from dml.utils.estimation import best_of
 import numpy as np
 
 if __name__ == '__main__':

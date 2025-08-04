@@ -1,5 +1,5 @@
 """Helper functions for building RDD for pyspark estimation."""
-from pysp.stats import *
+from dml.stats import *
 
 def read_index_csv(filename: str):
     """

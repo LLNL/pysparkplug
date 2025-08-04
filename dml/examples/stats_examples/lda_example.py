@@ -4,8 +4,8 @@ import sys
 os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import numpy as np
 
-import pysp.utils.optsutil as ops
-from pysp.stats import *
+import dml.utils.optsutil as ops
+from dml.stats import *
 
 
 def make_fake_data(num_topics: int, num_docs: int, snr: float, p_alpha: float,

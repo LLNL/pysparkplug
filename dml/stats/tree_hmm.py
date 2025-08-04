@@ -4,12 +4,12 @@ import itertools
 import numba
 import numpy as np
 from numpy.random import RandomState
-import pysp.utils.vector as vec
-from pysp.arithmetic import *
-from pysp.arithmetic import maxrandint
-from pysp.stats.null_dist import NullDistribution, NullAccumulatorFactory, NullEstimator, NullDataEncoder, \
+import dml.utils.vector as vec
+from dml.arithmetic import *
+from dml.arithmetic import maxrandint
+from dml.stats.null_dist import NullDistribution, NullAccumulatorFactory, NullEstimator, NullDataEncoder, \
     NullAccumulator
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DataSequenceEncoder, DistributionSampler, StatisticAccumulatorFactory, EncodedDataSequence
 
 D = Tuple[int, Optional[int]]

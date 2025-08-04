@@ -22,12 +22,12 @@ defining probabilities for an integer 0<=k<N being in a set (Generally a Bernoul
 import numpy as np
 from numpy.random import RandomState
 
-from pysp.arithmetic import *
-from pysp.arithmetic import maxrandint
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
+from dml.arithmetic import *
+from dml.arithmetic import maxrandint
+from dml.stats.pdist import SequenceEncodableProbabilityDistribution, SequenceEncodableStatisticAccumulator, \
     ParameterEstimator, DistributionSampler, DataSequenceEncoder, StatisticAccumulatorFactory, EncodedDataSequence
 
-from pysp.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
+from dml.stats.null_dist import NullDistribution, NullAccumulator, NullEstimator, NullDataEncoder, \
     NullAccumulatorFactory
 from typing import Sequence, Optional, Union, Any, Tuple, List, TypeVar, Dict
 

@@ -1,11 +1,11 @@
-from pysp.arithmetic import *
+from dml.arithmetic import *
 from numpy.random import RandomState
 from collections import defaultdict
-from pysp.bstats.pdist import ProbabilityDistribution, SequenceEncodableAccumulator, ParameterEstimator
+from dml.bstats.pdist import ProbabilityDistribution, SequenceEncodableAccumulator, ParameterEstimator
 import numpy as np
-from pysp.bstats.beta import BetaDistribution
-from pysp.bstats.mixture import MixtureDistribution
-from pysp.utils.special import gammaln
+from dml.bstats.beta import BetaDistribution
+from dml.bstats.mixture import MixtureDistribution
+from dml.utils.special import gammaln
 
 
 default_prior = BetaDistribution(1,1)

@@ -7,8 +7,8 @@ import os
 import pickle
 from mpi4py import MPI
 
-from pysp.mpi4py.utils.humap import humap_mpi
-from pysp.mpi4py.utils.optsutil import pickle_on_master
+from dml.mpi4py.utils.humap import humap_mpi
+from dml.mpi4py.utils.optsutil import pickle_on_master
 
 PATH_TO_DATA = "pysp/mpi4py/examples/data"
 

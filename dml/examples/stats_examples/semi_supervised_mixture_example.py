@@ -2,9 +2,9 @@
 import os
 
 os.environ['NUMBA_DISABLE_JIT'] = '1'
-from pysp.stats import *
-from pysp.stats.ss_mixture import *
-from pysp.utils.estimation import best_of
+from dml.stats import *
+from dml.stats.ss_mixture import *
+from dml.utils.estimation import best_of
 
 
 if __name__ == '__main__':

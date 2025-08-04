@@ -3,8 +3,8 @@ Note: Model fit is significantly faster with numba use.
 """
 import numpy as np
 
-from pysp.stats import *
-from pysp.utils.estimation import optimize
+from dml.stats import *
+from dml.utils.estimation import optimize
 
 if __name__ == '__main__':
     rng = np.random.RandomState(1)

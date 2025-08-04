@@ -5,8 +5,8 @@ from collections.abc import Iterable
 import math
 import numpy as np
 
-from pysp.bstats.mixture import MixtureDistribution
-from pysp.stats import ParameterEstimator
+from dml.bstats.mixture import MixtureDistribution
+from dml.stats import ParameterEstimator
 
 
 def get_optional_estimator(est: ParameterEstimator, missing_value: Optional[Any], use_bstats: bool = False):
@@ -21,10 +21,10 @@ def get_optional_estimator(est: ParameterEstimator, missing_value: Optional[Any]
         OptionalEstimator: An estimator that handles missing values.
     """
     if use_bstats:
-        from pysp.bstats.optional import OptionalEstimator
+        from dml.bstats.optional import OptionalEstimator
         return OptionalEstimator(est, missing_value=missing_value)
     else:
-        from pysp.stats.optional import OptionalEstimator
+        from dml.stats.optional import OptionalEstimator
         return OptionalEstimator(est, missing_value=missing_value)
 
 
@@ -39,10 +39,10 @@ def get_sequence_estimator(est: ParameterEstimator, use_bstats=False):
         SequenceEstimator: An estimator for sequences.
     """
     if use_bstats:
-        from pysp.bstats.sequence import SequenceEstimator
+        from dml.bstats.sequence import SequenceEstimator
         return SequenceEstimator(est)
     else:
-        from pysp.stats.sequence import SequenceEstimator
+        from dml.stats.sequence import SequenceEstimator
         return SequenceEstimator(est)
 
 
@@ -56,10 +56,10 @@ def get_ignored_estimator(use_bstats: bool = False):
         IgnoredEstimator: An estimator that ignores input data.
     """
     if use_bstats:
-        from pysp.bstats.ignored import IgnoredEstimator
+        from dml.bstats.ignored import IgnoredEstimator
         return IgnoredEstimator()
     else:
-        from pysp.stats.ignored import IgnoredEstimator
+        from dml.stats.ignored import IgnoredEstimator
         return IgnoredEstimator()
 
 
@@ -74,10 +74,10 @@ def get_composite_estimator(ests: Sequence[ParameterEstimator], use_bstats: bool
         CompositeEstimator: An estimator that combines multiple estimators.
     """
     if use_bstats:
-        from pysp.bstats.composite import CompositeEstimator
+        from dml.bstats.composite import CompositeEstimator
         return CompositeEstimator(ests)
     else:
-        from pysp.stats.composite import CompositeEstimator
+        from dml.stats.composite import CompositeEstimator
         return CompositeEstimator(ests)
 
 
@@ -94,7 +94,7 @@ def get_categorical_estimator(vdict: Dict[Any, float], pseudo_count: Optional[fl
         CategoricalEstimator: An estimator for categorical data.
     """
     if not use_bstats:
-        from pysp.stats.categorical import CategoricalEstimator
+        from dml.stats.categorical import CategoricalEstimator
         if emp_suff_stat:
             cnt = sum(vdict.values())
             suff_stat = {k: v / cnt for k, v in vdict.items()}
@@ -102,7 +102,7 @@ def get_categorical_estimator(vdict: Dict[Any, float], pseudo_count: Optional[fl
             suff_stat = None
         return CategoricalEstimator(pseudo_count=pseudo_count, suff_stat=suff_stat)
     else:
-        from pysp.bstats.categorical import CategoricalEstimator
+        from dml.bstats.categorical import CategoricalEstimator
         return CategoricalEstimator()
 
 
@@ -119,10 +119,10 @@ def get_poisson_estimator(vdict: Dict[Any, float], pseudo_count: Optional[float]
         PoissonEstimator: An estimator for Poisson-distributed data.
     """
     if use_bstats:
-        from pysp.bstats.poisson import PoissonEstimator
+        from dml.bstats.poisson import PoissonEstimator
         return PoissonEstimator()
     else:
-        from pysp.stats.poisson import PoissonEstimator
+        from dml.stats.poisson import PoissonEstimator
         if emp_suff_stat:
             ss_0 = 0.0
             ss_1 = 0.0
@@ -151,10 +151,10 @@ def get_gaussian_estimator(vdict: Dict[Any, float], pseudo_count: Optional[float
         GaussianEstimator: An estimator for Gaussian-distributed data.
     """
     if use_bstats:
-        from pysp.bstats.gaussian import GaussianEstimator
+        from dml.bstats.gaussian import GaussianEstimator
         return GaussianEstimator()
     else:
-        from pysp.stats.gaussian import GaussianEstimator
+        from dml.stats.gaussian import GaussianEstimator
         if emp_suff_stat:
             ss_0 = 0.0
             ss_1 = 0.0
@@ -413,9 +413,9 @@ def get_dpm_mixture(data: Sequence[Any], estimator: Optional[ParameterEstimator]
     Returns:
         MixtureDistribution: A mixture distribution model.
     """
-    from pysp.bstats.dpm import DirichletProcessMixtureEstimator
-    from pysp.bstats.mixture import MixtureDistribution
-    from pysp.bstats.bestimation import optimize
+    from dml.bstats.dpm import DirichletProcessMixtureEstimator
+    from dml.bstats.mixture import MixtureDistribution
+    from dml.bstats.bestimation import optimize
 
     if estimator is None:
         est = get_estimator(data, use_bstats=True)

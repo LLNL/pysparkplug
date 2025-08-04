@@ -4,9 +4,9 @@ from mpi4py import MPI
 
 import numpy as np
 
-from pysp.utils.automatic import get_estimator
-from pysp.bstats.mixture import MixtureDistribution
-from pysp.bstats import ParameterEstimator
+from dml.utils.automatic import get_estimator
+from dml.bstats.mixture import MixtureDistribution
+from dml.bstats import ParameterEstimator
 
 def get_dpm_mixture_mpi(
         data: Sequence[Any], 
@@ -31,9 +31,9 @@ def get_dpm_mixture_mpi(
     Returns:
         MixtureDistribution: A mixture distribution model.
     """
-    from pysp.bstats.dpm import DirichletProcessMixtureEstimator
-    from pysp.bstats.mixture import MixtureDistribution
-    from pysp.mpi4py.utils.bestimation import optimize_mpi
+    from dml.bstats.dpm import DirichletProcessMixtureEstimator
+    from dml.bstats.mixture import MixtureDistribution
+    from dml.mpi4py.utils.bestimation import optimize_mpi
 
     # Get MPI communicator, rank, and size
     comm = MPI.COMM_WORLD

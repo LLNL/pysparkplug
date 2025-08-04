@@ -5,8 +5,8 @@ ExponentialEstimator, and the ExponentialDataEncoder classes for use with DMLear
 """
 
 from typing import Optional, Tuple, List, Union, Dict, Any
-from pysp.arithmetic import *
-from pysp.stats.pdist import (
+from dml.arithmetic import *
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     ParameterEstimator,
     DistributionSampler,

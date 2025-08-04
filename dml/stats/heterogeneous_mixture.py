@@ -27,9 +27,9 @@ import numpy as np
 from numpy import ndarray
 from numpy.random import RandomState
 from math import exp
-from pysp.arithmetic import maxrandint
-import pysp.utils.vector as vec
-from pysp.stats.pdist import (
+from dml.arithmetic import maxrandint
+import dml.utils.vector as vec
+from dml.stats.pdist import (
     SequenceEncodableProbabilityDistribution,
     StatisticAccumulatorFactory,
     SequenceEncodableStatisticAccumulator,
