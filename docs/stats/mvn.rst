@@ -18,20 +18,20 @@ For more info see `Multivariate Normal Distribution <https://en.wikipedia.org/wi
 MultivariateGaussianDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.mvn.MultivariateGaussianDistribution
+.. autoclass:: dml.stats.mvn.MultivariateGaussianDistribution
    :members:
    :special-members: __init__
 
 MultivariateGaussianEstimator
 --------------------------------
 
-.. autoclass:: pysp.stats.mvn.MultivariateGaussianEstimator
+.. autoclass:: dml.stats.mvn.MultivariateGaussianEstimator
    :members:
    :special-members: __init__
 
 MultivariateGaussianSampler
 ------------------------------
 
-.. autoclass:: pysp.stats.mvn.MultivariateGaussianSampler
+.. autoclass:: dml.stats.mvn.MultivariateGaussianSampler
    :members:
 

@@ -15,20 +15,20 @@ For more info see `Gaussian Distribution <https://en.wikipedia.org/wiki/Normal_d
 GaussianDistribution
 -----------------------
 
-.. autoclass:: pysp.stats.gaussian.GaussianDistribution
+.. autoclass:: dml.stats.gaussian.GaussianDistribution
    :members:
    :special-members: __init__
 
 GaussianEstimator
 -------------------
 
-.. autoclass:: pysp.stats.gaussian.GaussianEstimator
+.. autoclass:: dml.stats.gaussian.GaussianEstimator
    :members:
    :special-members: __init__
 
 GaussianSampler
 ----------------
 
-.. autoclass:: pysp.stats.gaussian.GaussianSampler
+.. autoclass:: dml.stats.gaussian.GaussianSampler
    :members:
 

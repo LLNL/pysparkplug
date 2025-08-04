@@ -17,21 +17,21 @@ For more info see `Multinomial Distribution <https://en.wikipedia.org/wiki/Multi
 IntegerMultinomialDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.intmultinomial.IntegerMultinomialDistribution
+.. autoclass:: dml.stats.intmultinomial.IntegerMultinomialDistribution
    :members:
    :special-members: __init__
 
 IntegerMultinomialEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.intmultinomial.IntegerMultinomialEstimator
+.. autoclass:: dml.stats.intmultinomial.IntegerMultinomialEstimator
    :members:
    :special-members: __init__
 
 IntegerMultinomialSampler
 --------------------------
 
-.. autoclass:: pysp.stats.intmultinomial.IntegerMultinomialSampler
+.. autoclass:: dml.stats.intmultinomial.IntegerMultinomialSampler
    :members:
 
 

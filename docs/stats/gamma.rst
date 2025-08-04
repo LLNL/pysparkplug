@@ -15,20 +15,20 @@ The above is the scale parametarization of the gamma distribution. For more info
 GammaDistribution
 ------------------------
 
-.. autoclass:: pysp.stats.gamma.GammaDistribution
+.. autoclass:: dml.stats.gamma.GammaDistribution
    :members:
    :special-members: __init__
 
 GammaEstimator
 -----------------------
 
-.. autoclass:: pysp.stats.gamma.GammaEstimator
+.. autoclass:: dml.stats.gamma.GammaEstimator
    :members:
    :special-members: __init__
 
 GammaSampler
 -------------------
 
-.. autoclass:: pysp.stats.gamma.GammaSampler
+.. autoclass:: dml.stats.gamma.GammaSampler
    :members:
 

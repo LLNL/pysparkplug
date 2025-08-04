@@ -15,20 +15,20 @@ For more info see `Poisson Distribution <https://en.wikipedia.org/wiki/Poisson_d
 PoissonDistribution
 -----------------------
 
-.. autoclass:: pysp.stats.poisson.PoissonDistribution
+.. autoclass:: dml.stats.poisson.PoissonDistribution
    :members:
    :special-members: __init__
 
 PoissonEstimator
 -------------------
 
-.. autoclass:: pysp.stats.poisson.PoissonEstimator
+.. autoclass:: dml.stats.poisson.PoissonEstimator
    :members:
    :special-members: __init__
 
 PoissonSampler
 ----------------
 
-.. autoclass:: pysp.stats.poisson.PoissonSampler
+.. autoclass:: dml.stats.poisson.PoissonSampler
    :members:
 

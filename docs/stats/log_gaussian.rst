@@ -15,20 +15,20 @@ For more info see `log-Gaussian Distribution <https://en.wikipedia.org/wiki/Log-
 LogGaussianDistribution
 --------------------------
 
-.. autoclass:: pysp.stats.log_gaussian.LogGaussianDistribution
+.. autoclass:: dml.stats.log_gaussian.LogGaussianDistribution
    :members:
    :special-members: __init__
 
 LogGaussianEstimator
 -----------------------
 
-.. autoclass:: pysp.stats.log_gaussian.LogGaussianEstimator
+.. autoclass:: dml.stats.log_gaussian.LogGaussianEstimator
    :members:
    :special-members: __init__
 
 LogGaussianSampler
 ---------------------
 
-.. autoclass:: pysp.stats.log_gaussian.LogGaussianSampler
+.. autoclass:: dml.stats.log_gaussian.LogGaussianSampler
    :members:
 

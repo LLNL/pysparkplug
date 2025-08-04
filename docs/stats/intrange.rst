@@ -20,21 +20,21 @@ For more info see `Integer Categorical Distribution <https://en.wikipedia.org/wi
 IntegerCategoricalDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.intrange.IntegerCategoricalDistribution
+.. autoclass:: dml.stats.intrange.IntegerCategoricalDistribution
    :members:
    :special-members: __init__
 
 IntegerCategoricalEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.intrange.IntegerCategoricalEstimator
+.. autoclass:: dml.stats.intrange.IntegerCategoricalEstimator
    :members:
    :special-members: __init__
 
 IntegerCategoricalSampler
 --------------------------
 
-.. autoclass:: pysp.stats.intrange.IntegerCategoricalSampler
+.. autoclass:: dml.stats.intrange.IntegerCategoricalSampler
    :members:
 
 

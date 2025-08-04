@@ -39,21 +39,21 @@ for time points 1,2, ..., t-1,
 HiddenMarkovModelDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.hidden_markov.HiddenMarkovModelDistribution
+.. autoclass:: dml.stats.hidden_markov.HiddenMarkovModelDistribution
    :members:
    :special-members: __init__
 
 HiddenMarkovEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.hidden_markov.HiddenMarkovEstimator
+.. autoclass:: dml.stats.hidden_markov.HiddenMarkovEstimator
    :members:
    :special-members: __init__
 
 HiddenMarkovSampler
 --------------------------
 
-.. autoclass:: pysp.stats.hidden_markov.HiddenMarkovSampler
+.. autoclass:: dml.stats.hidden_markov.HiddenMarkovSampler
    :members:
 
 

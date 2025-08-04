@@ -28,20 +28,20 @@ In the above equation, :math:`p(x_k \vert x_{k-1})` is defined by the transition
 MarkovChainDistribution
 --------------------------
 
-.. autoclass:: pysp.stats.markovchain.MarkovChainDistribution
+.. autoclass:: dml.stats.markovchain.MarkovChainDistribution
    :members:
    :special-members: __init__
 
 MarkovChainEstimator
 -----------------------
 
-.. autoclass:: pysp.stats.markovchain.MarkovChainEstimator
+.. autoclass:: dml.stats.markovchain.MarkovChainEstimator
    :members:
    :special-members: __init__
 
 MarkovChainSampler
 ---------------------
 
-.. autoclass:: pysp.stats.markovchain.MarkovChainSampler
+.. autoclass:: dml.stats.markovchain.MarkovChainSampler
    :members:
 

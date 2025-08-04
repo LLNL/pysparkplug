@@ -39,20 +39,20 @@ The generative process for data :math:`\boldsymbol{X}_i = (X_{i,1}, ..., X_{i, n
 HierarchicalMixtureDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.hmixture.HierarchicalMixtureDistribution
+.. autoclass:: dml.stats.hmixture.HierarchicalMixtureDistribution
    :members:
    :special-members: __init__
 
 HierarchicalMixtureEstimator
 --------------------------------
 
-.. autoclass:: pysp.stats.hmixture.HierarchicalMixtureEstimator
+.. autoclass:: dml.stats.hmixture.HierarchicalMixtureEstimator
    :members:
    :special-members: __init__
 
 HierarchicalMixtureSampler
 -------------------------------
 
-.. autoclass:: pysp.stats.hmixture.HierarchicalMixtureSampler
+.. autoclass:: dml.stats.hmixture.HierarchicalMixtureSampler
    :members:
 
