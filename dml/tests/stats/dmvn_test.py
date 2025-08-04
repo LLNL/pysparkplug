@@ -1,5 +1,5 @@
 import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
+
 
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
