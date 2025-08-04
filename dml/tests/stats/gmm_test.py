@@ -1,3 +1,4 @@
+"""Tests for the Gaussian Mixture Model (GMM) distribution and its related classes."""
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.gmm import *

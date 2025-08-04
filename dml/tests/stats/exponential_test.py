@@ -1,3 +1,4 @@
+"""Tests for the Exponential distribution and its related classes."""
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.exponential import *

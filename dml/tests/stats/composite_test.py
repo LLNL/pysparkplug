@@ -1,9 +1,4 @@
-"""
-Unit tests for composite statistical distributions and related classes
-in the dml.stats module. Tests cover initialization, encoding, estimation,
-accumulation, and key handling for composite distributions.
-"""
-
+""""Tests for the CompositeDistribution class and related components."""
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.categorical import *

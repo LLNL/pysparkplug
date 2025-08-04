@@ -1,5 +1,15 @@
-os.environ['NUMBA_DISABLE_JIT'] = '1'
-
+"""Test cases for statistical distributions and their properties.
+This module provides a set of unit tests for various statistical distributions,
+including their string representation, estimators, samplers, and encoders.
+It includes tests for:
+- String evaluation of distributions
+- Estimators and their factories
+- Samplers and their repeatability
+- Log density calculations
+- Sequence encoders and their compatibility with distributions
+- Estimation and sequence estimation using empirical KL divergence
+- Initialization and update methods for accumulators
+- Type checking for keys and data"""
 from dml.stats import *
 import numpy as np
 from dml.utils.estimation import empirical_kl_divergence

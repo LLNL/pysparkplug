@@ -1,3 +1,4 @@
+"""Test cases for Integer Categorical Distribution and related classes."""
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.intrange import *

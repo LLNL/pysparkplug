@@ -1,6 +1,4 @@
-# import os
-# 
-
+"""Tests for the Diagonal Gaussian Mixture Distribution."""
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.dmvn_mixture import *

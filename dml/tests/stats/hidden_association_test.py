@@ -1,3 +1,4 @@
+"Tests for the Hidden Association Distribution and its related classes."
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.categorical import *
