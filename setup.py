@@ -5,7 +5,7 @@ setup(
     version="1.0.0.0",
     description="A package for estimating heterogeneous probability density functions.",
     author="Adam Walder",
-    python_requires=">=3.10, <3.11",
+    python_requires=">=3.10",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python",
