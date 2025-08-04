@@ -1,7 +1,7 @@
 .. _stats_mixture:
 Mixture Distribution
 =========================
-Mixture distributions are useful when a statistical population contains two or more subpopulations that are unobserved. *pysparkplug* allows for the specification of any model for the *components* of the mixture distribution. Assuming we have an observation *x* of data type *T* (any heterogenous form), the data generating process for a K-component mixture model is given by 
+Mixture distributions are useful when a statistical population contains two or more subpopulations that are unobserved. *DMLearn* allows for the specification of any model for the *components* of the mixture distribution. Assuming we have an observation *x* of data type *T* (any heterogenous form), the data generating process for a K-component mixture model is given by 
 
 .. math::
 

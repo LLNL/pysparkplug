@@ -1,7 +1,7 @@
 Abstract Classes
 ==================================
-Pysparkplug captures most distributions in the exponential family. A detailed walkthrough on defining a custom distribution class can be found in :ref:`user_defined`. 
-We list the abstract classes that exist in pysparkplug below.
+DMLearn captures most distributions in the exponential family. A detailed walkthrough on defining a custom distribution class can be found in :ref:`user_defined`. 
+We list the abstract classes that exist in DMLearn below.
 
 ProbabilityDistribution
 -----------------------------

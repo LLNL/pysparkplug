@@ -1,8 +1,8 @@
 from setuptools import setup, Extension, find_packages
 
 setup(
-    name="pysparkplug",
-    version="1.1.0",
+    name="dmlearn",
+    version="1.0.0.0",
     description="A package for estimating heterogeneous probability density functions.",
     author="Adam Walder",
     python_requires=">=3.10, <3.11",

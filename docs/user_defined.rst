@@ -8,7 +8,7 @@ User Defined Classes
     import os
     os.environ['NUMBA_DISABLE_JIT'] = '1'
 
-    sys.path.insert(0, os.path.abspath('path/to/pysparkplug'))
+    sys.path.insert(0, os.path.abspath('path/to/DMLearn'))
 
     import numpy as np 
     from numpy.random import RandomState
@@ -24,7 +24,7 @@ User Defined Classes
     from pysp.utils.estimation import optimize
     import matplotlib.pyplot as plt
 
-Outline: User-Defined Pysparkplug Class
+Outline: User-Defined DMLearn Class
 =========================================
 
 SequenceEncodableProbabilityDistribution
@@ -48,7 +48,7 @@ ParameterEstimator
 1. **Define the wrapper**: This is what users most commonly interact with to estimate distributions.
 2. **Form estimates**: Use sufficient statistics gathered in the accumulator to estimate the distribution.
 
-Once we have filled out our univariate Gaussian distribution, we can compare it with the standard pysparkplug style mixture wrapper.
+Once we have filled out our univariate Gaussian distribution, we can compare it with the standard DMLearn style mixture wrapper.
 
 One-Dimensional Gaussian Mixture Model (GMM)
 ==============================================
@@ -85,7 +85,7 @@ where:
 SequenceEncodableProbabilityDistribution
 ==========================================
 
-We first define a skeleton of the :class:`SequenceEncodableProbabilityDistribution`. We know that the distribution requires parameters **μ**, **σ²**, and mixing weights **π**. These must be passed to the constructor. Note that the argument **name** must also be included. We won't get into the reason for this, but make sure to include it for consistency with other pysparkplug distributions.
+We first define a skeleton of the :class:`SequenceEncodableProbabilityDistribution`. We know that the distribution requires parameters **μ**, **σ²**, and mixing weights **π**. These must be passed to the constructor. Note that the argument **name** must also be included. We won't get into the reason for this, but make sure to include it for consistency with other DMLearn distributions.
 
 .. code-block:: python
 
@@ -258,7 +258,7 @@ The :class:`EncodedDataSequence` should store the processed data (which happens 
 
 The :class:`DataSequenceEncoder` object must implement :meth:`__str__`, :meth:`__eq__`, and :meth:`seq_encode`. The method :meth:`seq_encode` should take the data and encode it. The result is returned as an :class:`EncodedDataSequence` object. Note that this is also the place to check for data compatibility (i.e. GMM can't handle NaN or inf values).
 
-The :meth:`__eq__` method is implemented to check if two :class:`DataSequenceEncoder` objects are the same. This helps with avoiding multiple encodings under the hood when nesting pysparkplug functions.
+The :meth:`__eq__` method is implemented to check if two :class:`DataSequenceEncoder` objects are the same. This helps with avoiding multiple encodings under the hood when nesting DMLearn functions.
 
 .. code-block:: python
 
@@ -465,7 +465,7 @@ where :math:`N_k = \sum_{n=1}^{N} \gamma_{nk}` is the effective number of points
 
 Sufficient Statistics
 =====================
-In pysparkplug, the accumulator tracks the sufficient statistics, which are used to perform the estimation step. Following the above, we see that 
+In DMLearn, the accumulator tracks the sufficient statistics, which are used to perform the estimation step. Following the above, we see that 
 
 .. math::
 
@@ -570,7 +570,7 @@ Implementing Update
 
 where :math:`\gamma_{nk}` is the responsibility that component ``k`` takes for data point ``n``.
 
-For the ``update`` function, we must calculate the posterior :math:`\gamma_{nk}` for each observation :math:`x_n`. This is done using a log-sum-exp trick. Once we have :math:`\gamma_{nk}`, we simply update the accumulators sufficient stats ``x``, ``x2``, and ``comp_counts`` accordingly. Note that ``weight`` is also multiplied to the :math:`\gamma_{nk}` values, as this allows for nesting with other pysparkplug classes.
+For the ``update`` function, we must calculate the posterior :math:`\gamma_{nk}` for each observation :math:`x_n`. This is done using a log-sum-exp trick. Once we have :math:`\gamma_{nk}`, we simply update the accumulators sufficient stats ``x``, ``x2``, and ``comp_counts`` accordingly. Note that ``weight`` is also multiplied to the :math:`\gamma_{nk}` values, as this allows for nesting with other DMLearn classes.
 
 We must also implement the vectorized ``seq_update``, which takes the ``GmmEncodedDataSequence`` previously defined.
 
@@ -694,7 +694,7 @@ Initialization of GMM sufficient statistics
 =============================================
 1. Draw :math:`\boldsymbol{\gamma}_i \sim \text{Dirichlet}\left(\left( \frac{1}{k}, \frac{1}{k}, \ldots, \frac{1}{k} \right)\right)`.
 
-2. Multiply by passed `weight` (this is for nesting with other pysparkplug distributions):
+2. Multiply by passed `weight` (this is for nesting with other DMLearn distributions):
 
    .. math::
 
@@ -930,7 +930,7 @@ The only thing left to do is to implement the `ParameterEstimator` class and fil
 Completed SequenceEncodableProbabilityDistribution
 ==================================================
 
-We can now fill out `estimate` in the `SequenceEncodableProbabilityDistribution`. This completes the GMM class for use in pysparkplug!
+We can now fill out `estimate` in the `SequenceEncodableProbabilityDistribution`. This completes the GMM class for use in DMLearn!
 
 .. code-block:: python
 
@@ -988,7 +988,7 @@ We can now fill out `estimate` in the `SequenceEncodableProbabilityDistribution`
 Proof of Concept
 ================
 
-Let's walk through the standard pysparkplug pipeline. First we declare the model and simulate some data. We then declare the estimator and fit the model using `optimize`.
+Let's walk through the standard DMLearn pipeline. First we declare the model and simulate some data. We then declare the estimator and fit the model using `optimize`.
 
 .. code-block:: python
 
