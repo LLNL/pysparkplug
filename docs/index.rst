@@ -21,3 +21,4 @@ Contents
    mixture_models.rst
    pdist.rst
    user_defined.rst
+   mpi4py_example.rst
