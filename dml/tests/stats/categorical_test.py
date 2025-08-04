@@ -1,11 +1,7 @@
-import os
-
-
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.categorical import CategoricalDistribution, CategoricalAccumulator, CategoricalAccumulatorFactory, CategoricalDataEncoder, CategoricalEstimator
 import numpy as np
-import unittest
 import pytest 
 
 class CategoricalDistributionTestCase(StatsTestClass):

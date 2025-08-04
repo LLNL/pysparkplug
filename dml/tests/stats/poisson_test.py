@@ -1,6 +1,3 @@
-import os
-
-
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
 from dml.stats.poisson import *

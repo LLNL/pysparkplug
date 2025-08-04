@@ -1,5 +1,8 @@
-import os
-
+"""
+Unit tests for binomial statistical distributions and related classes
+in the dml.stats.binomial module. Tests cover initialization, encoding,
+estimation, accumulation, and key handling for binomial distributions.
+"""
 
 from dml.tests.stats.stats_tests import * 
 from dml.stats import *
