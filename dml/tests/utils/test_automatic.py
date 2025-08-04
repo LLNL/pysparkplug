@@ -1,6 +1,5 @@
 """Tests for utils/automatic.py"""
 import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pytest
 import pickle
 import numpy as np

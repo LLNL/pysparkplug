@@ -4,7 +4,6 @@ Tests were run with mpiexec -n 4 pytest test_estimation
 
 """
 import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pickle
 import pytest
 from dml.stats import *
@@ -12,6 +11,8 @@ from dml.mpi4py.utils.estimation import optimize_mpi, best_of_mpi
 import numpy as np
 from mpi4py import MPI
 
+DATA_DIR = "dml/tests/data"
+ANSWER_DIR = "dml/tests/answerkeys"
 
 def test_optimize_mpi() -> None:
     """Test to ensure optimize works with mpi4py call."""
@@ -20,10 +21,10 @@ def test_optimize_mpi() -> None:
     world_size = comm.Get_size()
 
     if world_rank == 0:
-        with open('dml/tests/data/testInput_optimize_mpi_n4.pkl', 'rb') as f:
+        with open(os.path.join(DATA_DIR, 'testInput_optimize_mpi_n4.pkl'), 'rb') as f:
             data = pickle.load(f)
 
-        with open("dml/tests/answerkeys/testOutput_optimize_mpi_n4.pkl", "rb") as f:
+        with open(os.path.join(ANSWER_DIR, 'testOutput_optimize_mpi_n4.pkl'), 'rb') as f:
             answer = pickle.load(f)
     else:
         data = None
@@ -47,7 +48,7 @@ def test_best_of_mpi() -> None:
     world_size = comm.Get_size()
 
     if world_rank == 0:
-        with open('dml/tests/data/testInput_optimize_mpi_n4.pkl', 'rb') as f:
+        with open(os.path.join(DATA_DIR, 'testInput_optimize_mpi_n4.pkl'), 'rb') as f:
             data = pickle.load(f)
 
         data, vdata = data[:-10], data[-10:]
@@ -55,7 +56,7 @@ def test_best_of_mpi() -> None:
         data = None
         vdata = None
 
-    with open("dml/tests/answerkeys/testOutput_best_of_mpi_n4.pkl", "rb") as f:
+    with open(os.path.join(ANSWER_DIR, 'testOutput_best_of_mpi_n4.pkl'), 'rb') as f:
         answer = pickle.load(f)
 
     rng = np.random.RandomState(1)

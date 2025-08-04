@@ -1,6 +1,5 @@
 """Tests for heterogenous SNE functionality"""
 import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pickle
 from dml.stats import *
 from dml.utils.htsne import htsne

@@ -1,12 +1,14 @@
 """Tests for automatic.py with mpi4py support using 4 cores."""
 import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import pytest
 import pickle
 from mpi4py import MPI
 import numpy as np
 from dml.mpi4py.utils.automatic import get_dpm_mixture_mpi
 from dml.bstats import *
+
+DATA_DIR = "dml/tests/data"
+ANSWER_DIR = "dml/tests/answerkeys"
 
 
 @pytest.mark.parametrize("case_id", [0, 1])
@@ -15,12 +17,12 @@ def test_get_dpm_mixture_mpi(case_id: int) -> None:
     comm = MPI.COMM_WORLD
     world_rank = comm.Get_rank()
 
-    with open(f"dml/tests/data/testInput_automatic{case_id}.pkl", 'rb') as f:
+    with open(os.path.join(DATA_DIR, f"testInput_automatic{case_id}.pkl"), 'rb') as f:
         data = pickle.load(f)
     
     model = get_dpm_mixture_mpi(data, rng=np.random.RandomState(1))
 
-    with open(f"dml/tests/answerkeys/testOutput_automatic_get_dpm_mixture_mpi_n4_case{case_id}.txt", 'r') as f:
+    with open(os.path.join(ANSWER_DIR, f"testOutput_automatic_get_dpm_mixture_mpi_n4_case{case_id}.txt"), 'r') as f:
         answer = f.read()
     
     assert answer == str(model)
