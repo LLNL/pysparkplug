@@ -422,16 +422,3 @@ class HiddenAssociationEncodedDataSequence(EncodedDataSequence):
 
     def __repr__(self) -> str:
         return f'HiddenAssociationEncodedDataSequence(data={self.data})'
-
-
-
-
-
-
-
-
-
-
-
-
-

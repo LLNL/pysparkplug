@@ -1,37 +1,41 @@
 """Create, estimate, and sample from an exponential distribution with scale beta.
 
-Defines the ExponentialDistribution, ExponentialSampler, ExponentialAccumulatorFactory,ExponentialAccumulator,
+Defines the ExponentialDistribution, ExponentialSampler, ExponentialAccumulatorFactory, ExponentialAccumulator,
 ExponentialEstimator, and the ExponentialDataEncoder classes for use with pysparkplug.
-
 """
-from typing import Optional, Tuple
+
+from typing import Optional, Tuple, List, Union, Dict, Any
 from pysp.arithmetic import *
-from pysp.stats.pdist import SequenceEncodableProbabilityDistribution, ParameterEstimator, DistributionSampler, \
-    StatisticAccumulatorFactory, SequenceEncodableStatisticAccumulator, DataSequenceEncoder, EncodedDataSequence
+from pysp.stats.pdist import (
+    SequenceEncodableProbabilityDistribution,
+    ParameterEstimator,
+    DistributionSampler,
+    StatisticAccumulatorFactory,
+    SequenceEncodableStatisticAccumulator,
+    DataSequenceEncoder,
+    EncodedDataSequence,
+)
 from numpy.random import RandomState
 import numpy as np
-from typing import List, Union, Dict, Any
 
 
 class ExponentialDistribution(SequenceEncodableProbabilityDistribution):
-    """ExponentialDistribution object for scale beta.
+    """Exponential distribution with scale parameter beta.
 
     Attributes:
-        beta (float): Positive valued real number defining scale of exponential distribution.
-        log_beta (float): log of beta parameter.
-        name (Optional[str]): Assign a name to ExponentialDistribution object.
+        beta (float): Positive real number defining the scale of the exponential distribution.
+        log_beta (float): Logarithm of the beta parameter.
+        name (Optional[str]): Name for the ExponentialDistribution object.
         keys (Optional[str]): Key for parameters.
-
     """
 
-    def __init__(self, beta: float, name: Optional[str] = None, keys: Optional[str] = None):
-        """ExponentialDistribution object.
+    def __init__(self, beta: float, name: Optional[str] = None, keys: Optional[str] = None) -> None:
+        """Initialize ExponentialDistribution.
 
         Args:
-            beta (float): Positive valued real number defining scale of exponential distribution.
-            name (Optional[str]): Assign a name to ExponentialDistribution object.
-            keys (Optional[str]): Key for parameters.
-
+            beta (float): Positive real number defining the scale of the exponential distribution.
+            name (Optional[str], optional): Name for the ExponentialDistribution object.
+            keys (Optional[str], optional): Key for parameters.
         """
         self.beta = beta
         self.log_beta = np.log(beta)
@@ -39,29 +43,28 @@ class ExponentialDistribution(SequenceEncodableProbabilityDistribution):
         self.keys = keys
 
     def __str__(self) -> str:
-        return 'ExponentialDistribution(%s, name=%s, keys=%s)' % (repr(self.beta), repr(self.name), repr(self.keys))
+        """Return string representation."""
+        return f'ExponentialDistribution({repr(self.beta)}, name={repr(self.name)}, keys={repr(self.keys)})'
 
     def density(self, x: float) -> float:
-        """Evaluate the density of exponential distribution with scale beta.
+        """Evaluate the density of the exponential distribution at x.
 
         Args:
             x (float): Positive real-valued number.
 
         Returns:
             float: Density evaluated at x.
-
         """
         return np.exp(self.log_density(x))
 
     def log_density(self, x: float) -> float:
-        """Evaluate the log-density of exponential distribution with scale beta.
+        """Evaluate the log-density of the exponential distribution at x.
 
         Args:
             x (float): Positive real-valued number.
 
         Returns:
             float: Log-density evaluated at x.
-
         """
         if x < 0:
             return -inf
@@ -69,6 +72,14 @@ class ExponentialDistribution(SequenceEncodableProbabilityDistribution):
             return -x / self.beta - self.log_beta
 
     def seq_log_density(self, x: 'ExponentialEncodedDataSequence') -> np.ndarray:
+        """Vectorized log-density for encoded data.
+
+        Args:
+            x (ExponentialEncodedDataSequence): Encoded data sequence.
+
+        Returns:
+            np.ndarray: Log-density values.
+        """
         if not isinstance(x, ExponentialEncodedDataSequence):
             raise Exception('ExponentialEncodedDataSequence required for seq_log_density().')
 
@@ -77,70 +88,90 @@ class ExponentialDistribution(SequenceEncodableProbabilityDistribution):
         return rv
 
     def sampler(self, seed: Optional[int] = None) -> 'ExponentialSampler':
+        """Return an ExponentialSampler for this distribution.
+
+        Args:
+            seed (Optional[int], optional): Seed for random number generator.
+
+        Returns:
+            ExponentialSampler: Sampler object.
+        """
         return ExponentialSampler(dist=self, seed=seed)
 
     def estimator(self, pseudo_count: Optional[float] = None) -> 'ExponentialEstimator':
+        """Return an ExponentialEstimator for this distribution.
+
+        Args:
+            pseudo_count (Optional[float], optional): Pseudo-count for regularization.
+
+        Returns:
+            ExponentialEstimator: Estimator object.
+        """
         if pseudo_count is None:
             return ExponentialEstimator(name=self.name, keys=self.keys)
         else:
-            return ExponentialEstimator(pseudo_count=pseudo_count, suff_stat=self.beta, name=self.name, keys=self.keys)
+            return ExponentialEstimator(
+                pseudo_count=pseudo_count,
+                suff_stat=self.beta,
+                name=self.name,
+                keys=self.keys
+            )
 
     def dist_to_encoder(self) -> 'ExponentialDataEncoder':
+        """Return an ExponentialDataEncoder for this distribution.
+
+        Returns:
+            ExponentialDataEncoder: Encoder object.
+        """
         return ExponentialDataEncoder()
 
 
 class ExponentialSampler(DistributionSampler):
-    """ExponentialSampler for drawing samples from ExponentialSampler instance.
+    """Sampler for the exponential distribution.
 
     Attributes:
         dist (ExponentialDistribution): ExponentialDistribution instance to sample from.
-        rng (RandomState): RandomState with seed set to seed if passed in args.
-
+        rng (RandomState): Random number generator.
     """
 
     def __init__(self, dist: 'ExponentialDistribution', seed: Optional[int] = None) -> None:
-        """ExponentialSampler object.
+        """Initialize ExponentialSampler.
 
         Args:
             dist (ExponentialDistribution): ExponentialDistribution instance to sample from.
-            seed (Optional[int]): Used to set seed in random sampler.
-
+            seed (Optional[int], optional): Seed for random number generator.
         """
         self.rng = RandomState(seed)
         self.dist = dist
 
     def sample(self, size: Optional[int] = None) -> Union[float, np.ndarray]:
-        """Draw 'size' iid samples from ExponentialSampler object.
+        """Draw iid samples from the exponential distribution.
 
         Args:
-            size (Optional[int]): Treated as 1 if None is passed.
+            size (Optional[int], optional): Number of samples to draw. If None, returns a single sample.
 
         Returns:
-            Union[float, np.ndarray]: Numpy array of length 'size' from exponential distribution with scale beta if
-            size not None. Else a single sample is returned as float.
-
+            Union[float, np.ndarray]: Single sample or array of samples.
         """
         return self.rng.exponential(scale=self.dist.beta, size=size)
 
 
 class ExponentialAccumulator(SequenceEncodableStatisticAccumulator):
-    """ExponentialAccumulator object used to accumulate sufficient statistics.
+    """Accumulator for sufficient statistics of the exponential distribution.
 
     Attributes:
-        sum (float): Tracks the sum of observation values.
-        count (float): Tracks the sum of weighted observations used to form sum.
-        keys (Optional[str]): Aggregate all sufficient statistics with same key.
-        name (Optional[str]): Name for object. 
-
+        sum (float): Sum of observation values.
+        count (float): Sum of weights for observations.
+        keys (Optional[str]): Key for merging sufficient statistics.
+        name (Optional[str]): Name for object.
     """
 
     def __init__(self, keys: Optional[str] = None, name: Optional[str] = None) -> None:
-        """ExponentialAccumulator object.
+        """Initialize ExponentialAccumulator.
 
         Args:
-            keys (Optional[str]): Aggregate all sufficient statistics with same keys values.
-            name (Optional[str]): Name for object.
-
+            keys (Optional[str], optional): Key for merging sufficient statistics.
+            name (Optional[str], optional): Name for object.
         """
         self.sum = 0.0
         self.count = 0.0
@@ -148,51 +179,98 @@ class ExponentialAccumulator(SequenceEncodableStatisticAccumulator):
         self.name = name
 
     def update(self, x: float, weight: float, estimate: Optional['ExponentialDistribution']) -> None:
+        """Update accumulator with a new observation.
+
+        Args:
+            x (float): Observation.
+            weight (float): Weight for the observation.
+            estimate (Optional[ExponentialDistribution]): Not used.
+        """
         if x >= 0:
             self.sum += x * weight
             self.count += weight
 
     def initialize(self, x: float, weight: float, rng: Optional['np.random.RandomState']) -> None:
+        """Initialize accumulator with a new observation.
+
+        Args:
+            x (float): Observation.
+            weight (float): Weight for the observation.
+            rng (Optional[np.random.RandomState]): Not used.
+        """
         self.update(x, weight, None)
 
-    def seq_update(self,
-                   x: 'ExponentialEncodedDataSequence',
-                   weights: np.ndarray,
-                   estimate: Optional['ExponentialDistribution']) -> None:
+    def seq_update(
+        self,
+        x: 'ExponentialEncodedDataSequence',
+        weights: np.ndarray,
+        estimate: Optional['ExponentialDistribution']
+    ) -> None:
+        """Vectorized update for encoded data.
+
+        Args:
+            x (ExponentialEncodedDataSequence): Encoded data sequence.
+            weights (np.ndarray): Weights for each observation.
+            estimate (Optional[ExponentialDistribution]): Not used.
+        """
         self.sum += np.dot(x.data, weights)
         self.count += np.sum(weights, dtype=np.float64)
 
-    def seq_initialize(self,
-                       x: 'ExponentialEncodedDataSequence',
-                       weights: np.ndarray,
-                       rng: np.random.RandomState) -> None:
+    def seq_initialize(
+        self,
+        x: 'ExponentialEncodedDataSequence',
+        weights: np.ndarray,
+        rng: np.random.RandomState
+    ) -> None:
+        """Vectorized initialization for encoded data.
+
+        Args:
+            x (ExponentialEncodedDataSequence): Encoded data sequence.
+            weights (np.ndarray): Weights for each observation.
+            rng (np.random.RandomState): Not used.
+        """
         self.seq_update(x, weights, None)
 
     def combine(self, suff_stat: Tuple[float, float]) -> 'ExponentialAccumulator':
-        """Aggregates sufficient statistics with ExponentialAccumulator member sufficient statistics.
+        """Aggregate sufficient statistics with this accumulator.
 
         Args:
-            suff_stat (Tuple[float, float]): Aggregated count and sum.
+            suff_stat (Tuple[float, float]): (count, sum) to combine.
 
         Returns:
-            ExponentialAccumulator
-
+            ExponentialAccumulator: Self after combining.
         """
         self.sum += suff_stat[1]
         self.count += suff_stat[0]
-
         return self
 
     def value(self) -> Tuple[float, float]:
+        """Return the sufficient statistics as a tuple.
+
+        Returns:
+            Tuple[float, float]: (count, sum)
+        """
         return self.count, self.sum
 
     def from_value(self, x: Tuple[float, float]) -> 'ExponentialAccumulator':
+        """Set the sufficient statistics from a tuple.
+
+        Args:
+            x (Tuple[float, float]): (count, sum) values.
+
+        Returns:
+            ExponentialAccumulator: Self after setting values.
+        """
         self.count = x[0]
         self.sum = x[1]
-
         return self
 
     def key_merge(self, stats_dict: Dict[str, Any]) -> None:
+        """Merge this accumulator into a dictionary by key.
+
+        Args:
+            stats_dict (Dict[str, Any]): Dictionary of accumulators.
+        """
         if self.keys is not None:
             if self.keys in stats_dict:
                 x0, x1 = stats_dict[self.keys]
@@ -202,63 +280,79 @@ class ExponentialAccumulator(SequenceEncodableStatisticAccumulator):
                 stats_dict[self.keys] = (self.count, self.sum)
 
     def key_replace(self, stats_dict: Dict[str, Any]) -> None:
+        """Replace this accumulator's values with those from a dictionary by key.
+
+        Args:
+            stats_dict (Dict[str, Any]): Dictionary of accumulators.
+        """
         if self.keys is not None:
             if self.keys in stats_dict:
                 self.count = stats_dict[self.keys][0]
                 self.sum = stats_dict[self.keys][1]
 
     def acc_to_encoder(self) -> 'ExponentialDataEncoder':
+        """Return an ExponentialDataEncoder for this accumulator.
+
+        Returns:
+            ExponentialDataEncoder: Encoder object.
+        """
         return ExponentialDataEncoder()
 
 
 class ExponentialAccumulatorFactory(StatisticAccumulatorFactory):
-    """ExponentialAccumulatorFactory object for creating ExponentialAccumulator.
+    """Factory for creating ExponentialAccumulator objects.
 
     Attributes:
-        keys (Optional[str]): Used for merging sufficient statistics of ExponentialAccumulator.
+        keys (Optional[str]): Key for merging sufficient statistics.
         name (Optional[str]): Name for object.
-
     """
 
     def __init__(self, keys: Optional[str] = None, name: Optional[str] = None) -> None:
-        """ExponentialAccumulatorFactory object.
+        """Initialize ExponentialAccumulatorFactory.
 
         Args:
-            keys (Optional[str]): Used for merging sufficient statistics of ExponentialAccumulator.
-            name (Optional[str]): Name for object.
-
+            keys (Optional[str], optional): Key for merging sufficient statistics.
+            name (Optional[str], optional): Name for object.
         """
         self.keys = keys
         self.name = name
 
     def make(self) -> 'ExponentialAccumulator':
+        """Create a new ExponentialAccumulator.
+
+        Returns:
+            ExponentialAccumulator: New accumulator instance.
+        """
         return ExponentialAccumulator(keys=self.keys, name=self.name)
 
 
 class ExponentialEstimator(ParameterEstimator):
-    """ExponentialEstimator object estimates ExponentialDistribution from aggregated sufficient statistics.
+    """Estimator for the exponential distribution from aggregated sufficient statistics.
 
     Attributes:
         pseudo_count (Optional[float]): Used to weight sufficient statistics.
         suff_stat (Optional[float]): Positive float value for scale of exponential distribution.
-        name (Optional[str]): Assign a name to ExponentialEstimator.
-        keys (Optional[str]): Assign keys to ExponentialEstimator for combining sufficient statistics.
-
+        name (Optional[str]): Name for the estimator.
+        keys (Optional[str]): Key for combining sufficient statistics.
     """
 
-    def __init__(self,
-                 pseudo_count: Optional[float] = None,
-                 suff_stat: Optional[float] = None,
-                 name: Optional[str] = None,
-                 keys: Optional[str] = None) -> None:
-        """ExponentialEstimator object.
+    def __init__(
+        self,
+        pseudo_count: Optional[float] = None,
+        suff_stat: Optional[float] = None,
+        name: Optional[str] = None,
+        keys: Optional[str] = None
+    ) -> None:
+        """Initialize ExponentialEstimator.
 
         Args:
-            pseudo_count (Optional[float]): Used to weight sufficient statistics.
-            suff_stat (Optional[float]): Positive float value for scale of exponential distribution.
-            name (Optional[str]): Assign a name to ExponentialEstimator.
-            keys (Optional[str]): Assign keys to ExponentialEstimator for combining sufficient statistics.
+            pseudo_count (Optional[float], optional): Used to weight sufficient statistics.
+            suff_stat (Optional[float], optional): Positive float value for scale of exponential distribution.
+            name (Optional[str], optional): Name for the estimator.
+            keys (Optional[str], optional): Key for combining sufficient statistics.
 
+        Raises:
+            TypeError: If keys is not a string or None.
         """
         if isinstance(keys, str) or keys is None:
             self.keys = keys
@@ -271,10 +365,23 @@ class ExponentialEstimator(ParameterEstimator):
         self.name = name
 
     def accumulator_factory(self) -> 'ExponentialAccumulatorFactory':
+        """Return an ExponentialAccumulatorFactory for this estimator.
+
+        Returns:
+            ExponentialAccumulatorFactory: Factory object.
+        """
         return ExponentialAccumulatorFactory(keys=self.keys, name=self.name)
 
     def estimate(self, nobs: Optional[float], suff_stat: Tuple[float, float]) -> 'ExponentialDistribution':
+        """Estimate an ExponentialDistribution from sufficient statistics.
 
+        Args:
+            nobs (Optional[float]): Number of observations (not used).
+            suff_stat (Tuple[float, float]): (count, sum) sufficient statistics.
+
+        Returns:
+            ExponentialDistribution: Estimated distribution.
+        """
         if self.pseudo_count is not None and self.suff_stat is not None:
             p = (suff_stat[1] + self.suff_stat * self.pseudo_count) / (suff_stat[0] + self.pseudo_count)
         elif self.pseudo_count is not None and self.suff_stat is None:
@@ -289,10 +396,10 @@ class ExponentialEstimator(ParameterEstimator):
 
 
 class ExponentialDataEncoder(DataSequenceEncoder):
-    """ExponentialDataEncoder object for encoding sequences of iid exponential observations with data type float."""
+    """Encoder for sequences of iid exponential observations with data type float."""
 
     def __str__(self) -> str:
-        """Returns string representation of ExponentialDataEncoder."""
+        """Return string representation of ExponentialDataEncoder."""
         return 'ExponentialDataEncoder'
 
     def __eq__(self, other: object) -> bool:
@@ -302,12 +409,22 @@ class ExponentialDataEncoder(DataSequenceEncoder):
             other (object): Object to compare.
 
         Returns:
-            True if object is an instance of ExponentialDataEncoder, else False.
-
+            bool: True if object is an instance of ExponentialDataEncoder, else False.
         """
         return isinstance(other, ExponentialDataEncoder)
 
     def seq_encode(self, x: Union[List[float], np.ndarray]) -> 'ExponentialEncodedDataSequence':
+        """Encode a sequence of exponential observations.
+
+        Args:
+            x (Union[List[float], np.ndarray]): Sequence of iid exponential observations.
+
+        Returns:
+            ExponentialEncodedDataSequence: Encoded data sequence.
+
+        Raises:
+            Exception: If any value in x is not positive or is NaN.
+        """
         rv = np.asarray(x, dtype=float)
 
         if np.any(rv <= 0) or np.any(np.isnan(rv)):
@@ -315,23 +432,23 @@ class ExponentialDataEncoder(DataSequenceEncoder):
 
         return ExponentialEncodedDataSequence(data=rv)
 
+
 class ExponentialEncodedDataSequence(EncodedDataSequence):
-    """ExponentialEncodedDataSequence object for vectorized function calls.
+    """Encoded data sequence for vectorized function calls.
 
     Attributes:
         data (np.ndarray): Sequence of iid exponential observations.
-
     """
 
     def __init__(self, data: np.ndarray):
-        """ExponentialEncodedDataSequence object.
+        """Initialize ExponentialEncodedDataSequence.
 
         Args:
             data (np.ndarray): Sequence of iid exponential observations.
-
         """
         super().__init__(data=data)
 
     def __repr__(self) -> str:
+        """Return string representation."""
         return f'ExponentialEncodedDataSequence(data={self.data})'
 

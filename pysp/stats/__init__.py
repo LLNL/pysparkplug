@@ -1,6 +1,6 @@
-"""Load SequenceEncodableProbabilityDistribution, DistributionSampler, ParameterEstimator,
-and DataSequenceEncoder objects for the distributions in pyps.stats. This module also loads functions used to
-estimate Distributions from data sets.
+"""Initialization module for the stats package.
+
+This module initializes the stats subpackage.
 """
 __all__ = [
     "initialize",
@@ -180,42 +180,50 @@ from numpy.random import RandomState
 
 from typing import Optional, TypeVar, List, Tuple, Any, Union, Sequence
 
-
 T = TypeVar('T')
 T_D = TypeVar('T_D', bound=SequenceEncodableProbabilityDistribution)
 
 
 def load_models(x: str) -> SequenceEncodableProbabilityDistribution:
+    """Load a model from a string representation.
+
+    Args:
+        x (str): String representation of the model.
+
+    Returns:
+        SequenceEncodableProbabilityDistribution: Loaded model.
+    """
     return eval(x)
 
 
 def dump_models(x: SequenceEncodableProbabilityDistribution) -> str:
+    """Dump a model to its string representation.
+
+    Args:
+        x (SequenceEncodableProbabilityDistribution): Model to dump.
+
+    Returns:
+        str: String representation of the model.
+    """
     return str(x)
 
 
-def initialize(data: Union[Sequence[T], pyspark.rdd.RDD],
-               estimator: ParameterEstimator,
-               rng: np.random.RandomState,
-               p: float = 0.1) -> SequenceEncodableProbabilityDistribution:
+def initialize(
+    data: Union[Sequence[T], pyspark.rdd.RDD],
+    estimator: ParameterEstimator,
+    rng: np.random.RandomState,
+    p: float = 0.1
+) -> SequenceEncodableProbabilityDistribution:
     """Randomly initialize a model corresponding to ParameterEstimator for iid observations data.
-
-    Note: ParameterEstimator must be of data type T, matching the input data.
-
-    This function sequentially iterates over the entire data set 'data', repeatedly calling initialize() method
-    of the SequenceEncodableStatisticAccumulator object created from 'estimator'. Data points are weighted 0 or 1 with
-    probability p.
-
-    Seq_initialize() is much more efficient, and should produce the same initialized model for the same data sets.
 
     Args:
         data (Union[Sequence[T], pyspark.rdd.RDD]): Set of iid observations compatible with 'estimator'.
         estimator (ParameterEstimator): ParameterEstimator object for desired model to be estimated from data.
-        rng (RandomState): RandomState object for setting seed.
-        p (float): Proportion of data to randomly sample for initializing model.
+        rng (np.random.RandomState): RandomState object for setting seed.
+        p (float, optional): Proportion of data to randomly sample for initializing model. Defaults to 0.1.
 
     Returns:
-        SequenceEncodableProbabilityDistribution object consistent with 'estimator'.
-
+        SequenceEncodableProbabilityDistribution: Initialized model.
     """
     if isinstance(data, pyspark.rdd.RDD):
         factory = estimator.accumulator_factory()
@@ -272,32 +280,23 @@ def initialize(data: Union[Sequence[T], pyspark.rdd.RDD],
         return estimator.estimate(nobs, accumulator.value())
 
 
-def estimate(data: Union[Sequence[T], pyspark.rdd.RDD],
-             estimator: ParameterEstimator,
-             prev_estimate: Optional[SequenceEncodableProbabilityDistribution] = None
-             ) -> SequenceEncodableProbabilityDistribution:
+def estimate(
+    data: Union[Sequence[T], pyspark.rdd.RDD],
+    estimator: ParameterEstimator,
+    prev_estimate: Optional[SequenceEncodableProbabilityDistribution] = None
+) -> SequenceEncodableProbabilityDistribution:
     """Perform E-step in EM algorithm by iterating over all observations in 'data'.
-
-    Arg estimator must be consistent with prev_estimate. That is, prev_estimate must be an estimate that could be
-    obtained from estimator.
-
-    Data must type consistent with estimator and prev_estimate.
-
-    Returns the next iteration of EM algorithm by iterating over each observation of data. See seq_estimate() for
-    a more computationally efficient implementation.
 
     Args:
         data (Union[Sequence[T], pyspark.rdd.RDD]): Sequence of iid observations of data type consistent with
             'estimator' and/or 'prev_estimate'.
         estimator (ParameterEstimator): Model to be estimated from 'data'.
-        prev_estimate (Optional[SequenceEncodableProbabilityDistribution]): Previous estimate of EM algorithm. Must
-            be included for distributions that require initialization.
+        prev_estimate (Optional[SequenceEncodableProbabilityDistribution], optional): Previous estimate of EM algorithm. Must
+            be included for distributions that require initialization. Defaults to None.
 
     Returns:
-        SequenceEncodableProbabilityDistribution object.
-
+        SequenceEncodableProbabilityDistribution: Next iteration of EM algorithm.
     """
-
     if isinstance(data, pyspark.rdd.RDD):
         sc = data.context
         factory = estimator.accumulator_factory()
@@ -339,36 +338,27 @@ def estimate(data: Union[Sequence[T], pyspark.rdd.RDD],
         return estimator.estimate(nobs, accumulator.value())
 
 
-def seq_encode(data: Union[Sequence[T], pyspark.rdd.RDD],
-               encoder: Optional[DataSequenceEncoder] = None,
-               estimator: Optional[ParameterEstimator] = None,
-               model: Optional[SequenceEncodableProbabilityDistribution] = None,
-               num_chunks: int = 1, chunk_size: Optional[int] = None)\
-        -> Union['pyspark.rdd.RDD', List[Tuple[int, EncodedDataSequence]]]:
+def seq_encode(
+    data: Union[Sequence[T], pyspark.rdd.RDD],
+    encoder: Optional[DataSequenceEncoder] = None,
+    estimator: Optional[ParameterEstimator] = None,
+    model: Optional[SequenceEncodableProbabilityDistribution] = None,
+    num_chunks: int = 1,
+    chunk_size: Optional[int] = None
+) -> Union['pyspark.rdd.RDD', List[Tuple[int, EncodedDataSequence]]]:
     """Sequence encode a sequence of iid observations from a distribution corresponding to 'encoder'.
-
-    Notes:
-        Takes data of type Union[Sequence[T], pyspark.rdd.RDD], where the data type of the DataSequenceEncoder object's
-        corresponding distribution is type T.
-
-        If not RDD, returns a List[Tuple[int, T1]], with each list entry being a tuple containing the number of observations
-        in the sequence (chunk_size), and an encoded sequence of the observations having type T1. The list has length
-        num_chunks.
-
-        RDD version with receive the Tuple of chunk_size and encoded data of type T1 for each corresponding node.
 
     Args:
         data (Union[Sequence[T], pyspark.rdd.RDD]): Sequence of iid observations of data type consistent with
             'encoder'.
-        encoder (Optional[DataSequenceEncoder]): A DataSequenceEncoder object for sequence encoding iid sequences.
-        estimator (Optional[ParameterEstimator]): An estimator to create DataSequenceEncoder from.
-        model (Optional[SequenceEncodableProbabilityDistribution]): A distribution to create DataSequenceEncoder from.
-        num_chunks (int): Number of chunks to split the data into. Useful for distributed data sets.
-        chunk_size (Optional[int]): Approximate size of chunks to determine num_chunks above.
+        encoder (Optional[DataSequenceEncoder], optional): A DataSequenceEncoder object for sequence encoding iid sequences.
+        estimator (Optional[ParameterEstimator], optional): An estimator to create DataSequenceEncoder from.
+        model (Optional[SequenceEncodableProbabilityDistribution], optional): A distribution to create DataSequenceEncoder from.
+        num_chunks (int, optional): Number of chunks to split the data into. Defaults to 1.
+        chunk_size (Optional[int], optional): Approximate size of chunks to determine num_chunks above.
 
     Returns:
-        Tuple[int, EncodedDataSequence]: Obs count and EncodedDataSequence object for use with 'seq_' functions.
-
+        Union[pyspark.rdd.RDD, List[Tuple[int, EncodedDataSequence]]]: Encoded data.
     """
     if encoder is None:
         if model is not None:
@@ -593,7 +583,7 @@ def seq_estimate(enc_data: Union[List[Tuple[int, EncodedDataSequence]], 'pyspark
         accumulator.key_merge(stats_dict)
         accumulator.key_replace(stats_dict)
 
-        return estimator.estimate(None, accumulator.value())
+        return estimator.estimate(nobs, accumulator.value())
 
 
 def seq_initialize(enc_data: Union[List[Tuple[int, T]], 'pyspark.rdd.RDD'],
