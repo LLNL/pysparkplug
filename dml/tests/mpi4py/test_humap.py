@@ -11,8 +11,8 @@ from dml.mpi4py.utils.humap import humap_mpi
 import numpy as np
 from mpi4py import MPI
 
-DATA_DIR = "pysp/tests/data"
-ANSWER_DIR = "pysp/tests/answerkeys"
+DATA_DIR = "dml/tests/data"
+ANSWER_DIR = "dml/tests/answerkeys"
 
 
 def test_humap_mpi() -> None:

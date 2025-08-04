@@ -10,7 +10,7 @@ from mpi4py import MPI
 from dml.mpi4py.utils.humap import humap_mpi
 from dml.mpi4py.utils.optsutil import pickle_on_master
 
-PATH_TO_DATA = "pysp/mpi4py/examples/data"
+PATH_TO_DATA = "dml/mpi4py/examples/data"
 
 comm = MPI.COMM_WORLD
 world_rank = comm.Get_rank()

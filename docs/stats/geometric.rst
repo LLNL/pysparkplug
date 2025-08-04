@@ -14,20 +14,20 @@ For more info see `Geometric Distribution <https://en.wikipedia.org/wiki/Geometr
 GeometricDistribution
 -----------------------
 
-.. autoclass:: pysp.stats.geometric.GeometricDistribution
+.. autoclass:: dml.stats.geometric.GeometricDistribution
    :members:
    :special-members: __init__
 
 GeometricEstimator
 -------------------
 
-.. autoclass:: pysp.stats.geometric.GeometricEstimator
+.. autoclass:: dml.stats.geometric.GeometricEstimator
    :members:
    :special-members: __init__
 
 GeometricSampler
 ----------------
 
-.. autoclass:: pysp.stats.geometric.GeometricSampler
+.. autoclass:: dml.stats.geometric.GeometricSampler
    :members:
 

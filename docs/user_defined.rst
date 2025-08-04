@@ -13,15 +13,15 @@ User Defined Classes
     import numpy as np 
     from numpy.random import RandomState
     from typing import Optional, Sequence, Dict, Union, Tuple, Any
-    from pysp.arithmetic import * 
-    from pysp.stats.pdist import (SequenceEncodableProbabilityDistribution, 
+    from dml.arithmetic import * 
+    from dml.stats.pdist import (SequenceEncodableProbabilityDistribution, 
                                    ParameterEstimator, 
                                    DistributionSampler, 
                                    StatisticAccumulatorFactory, 
                                    SequenceEncodableStatisticAccumulator, 
                                    DataSequenceEncoder, 
                                    EncodedDataSequence)
-    from pysp.utils.estimation import optimize
+    from dml.utils.estimation import optimize
     import matplotlib.pyplot as plt
 
 Outline: User-Defined DMLearn Class
@@ -596,7 +596,7 @@ We must also implement the vectorized ``seq_update``, which takes the ``GmmEncod
                 # log-sum-exp back to exp
                 gamma = np.exp(gamma-max_, out=gamma)
                 gamma /= np.sum(gamma)
-                # multiply by weight to allow for down stream nesting with other pysp classes
+                # multiply by weight to allow for down stream nesting with other dml classes
                 gamma *= weight
                 self.comp_counts += gamma
                 self.x += x*gamma
@@ -739,7 +739,7 @@ This is quite trivial to vectorize and implement in `seq_initialize` using our e
             # log-sum-exp back to exp
             gamma = np.exp(gamma-max_, out=gamma)
             gamma /= np.sum(gamma)
-            # multiply by weight to allow for down stream nesting with other pysp classes
+            # multiply by weight to allow for down stream nesting with other dml classes
             gamma *= weight
             self.comp_counts += gamma
             self.x += x*gamma

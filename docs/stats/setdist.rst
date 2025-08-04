@@ -14,20 +14,20 @@ For speed, the user can map observed values :math:`v_i \rightarrow i` and use th
 BernoulliSetDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.setdist.BernoulliSetDistribution
+.. autoclass:: dml.stats.setdist.BernoulliSetDistribution
    :members:
    :special-members: __init__
 
 BernoulliSetEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.setdist.BernoulliSetEstimator
+.. autoclass:: dml.stats.setdist.BernoulliSetEstimator
    :members:
    :special-members: __init__
 
 BernoulliSetSampler
 --------------------------------
 
-.. autoclass:: pysp.stats.setdist.BernoulliSetSampler
+.. autoclass:: dml.stats.setdist.BernoulliSetSampler
    :members:
 

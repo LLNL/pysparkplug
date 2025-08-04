@@ -6,14 +6,14 @@ We list the abstract classes that exist in DMLearn below.
 ProbabilityDistribution
 -----------------------------
 
-.. autoclass:: pysp.stats.pdist.ProbabilityDistribution
+.. autoclass:: dml.stats.pdist.ProbabilityDistribution
    :members:
    :special-members: __init__
 
 SequenceEncodableProbabilityDistribution
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.SequenceEncodableProbabilityDistribution
+.. autoclass:: dml.stats.pdist.SequenceEncodableProbabilityDistribution
    :members:
    :special-members: __init__
 
@@ -21,7 +21,7 @@ SequenceEncodableProbabilityDistribution
 DistributionSampler
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.DistributionSampler
+.. autoclass:: dml.stats.pdist.DistributionSampler
    :members:
    :special-members: __init__
 
@@ -29,7 +29,7 @@ DistributionSampler
 ConditionalSampler
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.ConditionalSampler
+.. autoclass:: dml.stats.pdist.ConditionalSampler
    :members:
    :special-members: __init__
 
@@ -37,7 +37,7 @@ ConditionalSampler
 StatisticAccumulator
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.StatisticAccumulator
+.. autoclass:: dml.stats.pdist.StatisticAccumulator
    :members:
    :special-members: __init__
 
@@ -46,7 +46,7 @@ StatisticAccumulator
 SequenceEncodableStatisticAccumulator
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.SequenceEncodableStatisticAccumulator
+.. autoclass:: dml.stats.pdist.SequenceEncodableStatisticAccumulator
    :members:
    :special-members: __init__
 
@@ -54,14 +54,14 @@ SequenceEncodableStatisticAccumulator
 ParameterEstimator
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.ParameterEstimator
+.. autoclass:: dml.stats.pdist.ParameterEstimator
    :members:
    :special-members: __init__
 
 DataSequenceEncoder
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.DataSequenceEncoder
+.. autoclass:: dml.stats.pdist.DataSequenceEncoder
    :members:
    :special-members: __init__
 
@@ -70,7 +70,7 @@ DataSequenceEncoder
 EncodedDataSequence
 ------------------------------------------
 
-.. autoclass:: pysp.stats.pdist.EncodedDataSequence
+.. autoclass:: dml.stats.pdist.EncodedDataSequence
    :members:
    :special-members: __init__
 

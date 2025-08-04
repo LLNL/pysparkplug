@@ -20,21 +20,21 @@ We allow for the user to define the *missing value*.
 OptionalDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.optional.OptionalDistribution
+.. autoclass:: dml.stats.optional.OptionalDistribution
    :members:
    :special-members: __init__
 
 OptionalEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.optional.OptionalEstimator
+.. autoclass:: dml.stats.optional.OptionalEstimator
    :members:
    :special-members: __init__
 
 OptionalSampler
 --------------------------
 
-.. autoclass:: pysp.stats.optional.OptionalSampler
+.. autoclass:: dml.stats.optional.OptionalSampler
    :members:
 
 

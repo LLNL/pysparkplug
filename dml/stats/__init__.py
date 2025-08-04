@@ -149,7 +149,7 @@ from dml.stats.hidden_association import HiddenAssociationDistribution, HiddenAs
 from dml.stats.hidden_markov import HiddenMarkovModelDistribution, HiddenMarkovEstimator
 from dml.stats.jmixture import JointMixtureDistribution, JointMixtureEstimator
 from dml.stats.tree_hmm import TreeHiddenMarkovModelDistribution, TreeHiddenMarkovEstimator
-# from pysp.stats.lda import LDADistribution, LDAEstimator
+# from dml.stats.lda import LDADistribution, LDAEstimator
 from dml.stats.markovchain import MarkovChainDistribution, MarkovChainEstimator
 from dml.stats.setdist import BernoulliSetDistribution, BernoulliSetEstimator
 from dml.stats.spearman_rho import SpearmanRankingDistribution, SpearmanRankingEstimator

@@ -13,20 +13,20 @@ The probability mass function is given by
 BinomialDistribution
 ----------------------
 
-.. autoclass:: pysp.stats.binomial.BinomialDistribution
+.. autoclass:: dml.stats.binomial.BinomialDistribution
    :members:
    :special-members: __init__
 
 BinomialEstimator
 --------------------
 
-.. autoclass:: pysp.stats.binomial.BinomialEstimator
+.. autoclass:: dml.stats.binomial.BinomialEstimator
    :members:
    :special-members: __init__
 
 BinomialSampler
 ------------------
 
-.. autoclass:: pysp.stats.binomial.BinomialSampler
+.. autoclass:: dml.stats.binomial.BinomialSampler
    :members:
 

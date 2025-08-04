@@ -5,21 +5,21 @@ The IgnoredDistribution and IgnoredEstimator classes provide a way of either ign
 IgnoredDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.ignored.IgnoredDistribution
+.. autoclass:: dml.stats.ignored.IgnoredDistribution
    :members:
    :special-members: __init__
 
 IgnoredEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.ignored.IgnoredEstimator
+.. autoclass:: dml.stats.ignored.IgnoredEstimator
    :members:
    :special-members: __init__
 
 IgnoredSampler
 --------------------------
 
-.. autoclass:: pysp.stats.ignored.IgnoredSampler
+.. autoclass:: dml.stats.ignored.IgnoredSampler
    :members:
 
 

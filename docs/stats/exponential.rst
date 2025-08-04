@@ -15,20 +15,20 @@ The above is the scale parametarization of the exponential distribution. For mor
 ExponentialDistribution
 ------------------------
 
-.. autoclass:: pysp.stats.exponential.ExponentialDistribution
+.. autoclass:: dml.stats.exponential.ExponentialDistribution
    :members:
    :special-members: __init__
 
 ExponentialEstimator
 -----------------------
 
-.. autoclass:: pysp.stats.exponential.ExponentialEstimator
+.. autoclass:: dml.stats.exponential.ExponentialEstimator
    :members:
    :special-members: __init__
 
 ExponentialSampler
 -------------------
 
-.. autoclass:: pysp.stats.exponential.ExponentialSampler
+.. autoclass:: dml.stats.exponential.ExponentialSampler
    :members:
 

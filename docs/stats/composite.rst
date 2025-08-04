@@ -12,21 +12,21 @@ where :math:`f(x_i \vert \theta_i)` are distributions compatible with component 
 CompositeDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.composite.CompositeDistribution
+.. autoclass:: dml.stats.composite.CompositeDistribution
    :members:
    :special-members: __init__
 
 CompositeEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.composite.CompositeEstimator
+.. autoclass:: dml.stats.composite.CompositeEstimator
    :members:
    :special-members: __init__
 
 CompositeSampler
 --------------------------
 
-.. autoclass:: pysp.stats.composite.CompositeSampler
+.. autoclass:: dml.stats.composite.CompositeSampler
    :members:
 
 

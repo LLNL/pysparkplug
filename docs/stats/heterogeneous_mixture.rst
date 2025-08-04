@@ -5,20 +5,20 @@ The Heterogeneous mixture distribution can be used to assign heterogeneous mixtu
 HeterogeneousMixtureDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.heterogeneous_mixture.HeterogeneousMixtureDistribution
+.. autoclass:: dml.stats.heterogeneous_mixture.HeterogeneousMixtureDistribution
    :members:
    :special-members: __init__
 
 HeterogeneousMixtureEstimator
 --------------------------------
 
-.. autoclass:: pysp.stats.heterogeneous_mixture.HeterogeneousMixtureEstimator
+.. autoclass:: dml.stats.heterogeneous_mixture.HeterogeneousMixtureEstimator
    :members:
    :special-members: __init__
 
 HeterogeneousMixtureSampler
 -------------------------------
 
-.. autoclass:: pysp.stats.heterogeneous_mixture.HeterogeneousMixtureSampler
+.. autoclass:: dml.stats.heterogeneous_mixture.HeterogeneousMixtureSampler
    :members:
 

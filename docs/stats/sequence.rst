@@ -11,21 +11,21 @@ Assume :math:`x_i = (x_{i1}, ..., x_{i n_i})` is a sequence of length :math:`n_i
 SequenceDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.sequence.SequenceDistribution
+.. autoclass:: dml.stats.sequence.SequenceDistribution
    :members:
    :special-members: __init__
 
 SequenceEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.sequence.SequenceEstimator
+.. autoclass:: dml.stats.sequence.SequenceEstimator
    :members:
    :special-members: __init__
 
 SequenceSampler
 --------------------------
 
-.. autoclass:: pysp.stats.sequence.SequenceSampler
+.. autoclass:: dml.stats.sequence.SequenceSampler
    :members:
 
 

@@ -20,21 +20,21 @@ For more info see `Categorical Distribution <https://en.wikipedia.org/wiki/Categ
 CategoricalDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.categorical.CategoricalDistribution
+.. autoclass:: dml.stats.categorical.CategoricalDistribution
    :members:
    :special-members: __init__
 
 CategoricalEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.categorical.CategoricalEstimator
+.. autoclass:: dml.stats.categorical.CategoricalEstimator
    :members:
    :special-members: __init__
 
 CategoricalSampler
 --------------------------
 
-.. autoclass:: pysp.stats.categorical.CategoricalSampler
+.. autoclass:: dml.stats.categorical.CategoricalSampler
    :members:
 
 

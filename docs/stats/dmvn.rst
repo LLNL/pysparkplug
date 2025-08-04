@@ -16,20 +16,20 @@ For more info see `Multivariate Normal Distribution <https://en.wikipedia.org/wi
 DiagonalGaussianDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.dmvn.DiagonalGaussianDistribution
+.. autoclass:: dml.stats.dmvn.DiagonalGaussianDistribution
    :members:
    :special-members: __init__
 
 DiagonalGaussianEstimator
 ---------------------------
 
-.. autoclass:: pysp.stats.dmvn.DiagonalGaussianEstimator
+.. autoclass:: dml.stats.dmvn.DiagonalGaussianEstimator
    :members:
    :special-members: __init__
 
 DiagonalGaussianSampler
 ---------------------------
 
-.. autoclass:: pysp.stats.dmvn.DiagonalGaussianSampler
+.. autoclass:: dml.stats.dmvn.DiagonalGaussianSampler
    :members:
 

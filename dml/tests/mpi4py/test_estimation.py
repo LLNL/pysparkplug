@@ -20,10 +20,10 @@ def test_optimize_mpi() -> None:
     world_size = comm.Get_size()
 
     if world_rank == 0:
-        with open('pysp/tests/data/testInput_optimize_mpi_n4.pkl', 'rb') as f:
+        with open('dml/tests/data/testInput_optimize_mpi_n4.pkl', 'rb') as f:
             data = pickle.load(f)
 
-        with open("pysp/tests/answerkeys/testOutput_optimize_mpi_n4.pkl", "rb") as f:
+        with open("dml/tests/answerkeys/testOutput_optimize_mpi_n4.pkl", "rb") as f:
             answer = pickle.load(f)
     else:
         data = None
@@ -47,7 +47,7 @@ def test_best_of_mpi() -> None:
     world_size = comm.Get_size()
 
     if world_rank == 0:
-        with open('pysp/tests/data/testInput_optimize_mpi_n4.pkl', 'rb') as f:
+        with open('dml/tests/data/testInput_optimize_mpi_n4.pkl', 'rb') as f:
             data = pickle.load(f)
 
         data, vdata = data[:-10], data[-10:]
@@ -55,7 +55,7 @@ def test_best_of_mpi() -> None:
         data = None
         vdata = None
 
-    with open("pysp/tests/answerkeys/testOutput_best_of_mpi_n4.pkl", "rb") as f:
+    with open("dml/tests/answerkeys/testOutput_best_of_mpi_n4.pkl", "rb") as f:
         answer = pickle.load(f)
 
     rng = np.random.RandomState(1)

@@ -5,8 +5,8 @@ from dml.stats import *
 from dml.utils.humap import humap
 import numpy as np
 
-DATA_DIR = "pysp/tests/data"
-ANSWER_DIR = "pysp/tests/answerkeys"
+DATA_DIR = "dml/tests/data"
+ANSWER_DIR = "dml/tests/answerkeys"
 
 def test_humap() -> None:
     """Test for humap using automatic fitting."""

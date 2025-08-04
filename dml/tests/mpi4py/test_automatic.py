@@ -15,12 +15,12 @@ def test_get_dpm_mixture_mpi(case_id: int) -> None:
     comm = MPI.COMM_WORLD
     world_rank = comm.Get_rank()
 
-    with open(f"pysp/tests/data/testInput_automatic{case_id}.pkl", 'rb') as f:
+    with open(f"dml/tests/data/testInput_automatic{case_id}.pkl", 'rb') as f:
         data = pickle.load(f)
     
     model = get_dpm_mixture_mpi(data, rng=np.random.RandomState(1))
 
-    with open(f"pysp/tests/answerkeys/testOutput_automatic_get_dpm_mixture_mpi_n4_case{case_id}.txt", 'r') as f:
+    with open(f"dml/tests/answerkeys/testOutput_automatic_get_dpm_mixture_mpi_n4_case{case_id}.txt", 'r') as f:
         answer = f.read()
     
     assert answer == str(model)

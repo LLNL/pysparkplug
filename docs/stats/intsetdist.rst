@@ -14,20 +14,20 @@ See :doc:`Bernoulli Set Distribution <setdist>` for a more generic implementatio
 IntegerBernoulliSetDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.intsetdist.IntegerBernoulliSetDistribution
+.. autoclass:: dml.stats.intsetdist.IntegerBernoulliSetDistribution
    :members:
    :special-members: __init__
 
 IntegerBernoulliSetEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.intsetdist.IntegerBernoulliSetEstimator
+.. autoclass:: dml.stats.intsetdist.IntegerBernoulliSetEstimator
    :members:
    :special-members: __init__
 
 IntegerBernoulliSetSampler
 --------------------------------
 
-.. autoclass:: pysp.stats.intsetdist.IntegerBernoulliSetSampler
+.. autoclass:: dml.stats.intsetdist.IntegerBernoulliSetSampler
    :members:
 

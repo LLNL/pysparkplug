@@ -6,8 +6,8 @@ from dml.stats import *
 from dml.utils.htsne import htsne
 import numpy as np
 
-DATA_DIR = "pysp/tests/data"
-ANSWER_DIR = "pysp/tests/answerkeys"
+DATA_DIR = "dml/tests/data"
+ANSWER_DIR = "dml/tests/answerkeys"
 
 def test_htsne() -> None:
     """Test if HTSNE behaves as expected with data only input."""

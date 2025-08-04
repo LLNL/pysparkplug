@@ -15,21 +15,21 @@ Note that each value of :math:`x_i` emits a distribution over the support of *y*
 ConditionalDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.conditional.ConditionalDistribution
+.. autoclass:: dml.stats.conditional.ConditionalDistribution
    :members:
    :special-members: __init__
 
 ConditionalDistributionEstimator
 ----------------------------------
 
-.. autoclass:: pysp.stats.conditional.ConditionalDistributionEstimator
+.. autoclass:: dml.stats.conditional.ConditionalDistributionEstimator
    :members:
    :special-members: __init__
 
 ConditionalDistributionSampler
 -------------------------------
 
-.. autoclass:: pysp.stats.conditional.ConditionalDistributionSampler
+.. autoclass:: dml.stats.conditional.ConditionalDistributionSampler
    :members:
 
 

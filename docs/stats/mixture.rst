@@ -15,21 +15,21 @@ where :math:`\pi_k` representing the probability of *x* being drawn from compone
 MixtureDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.mixture.MixtureDistribution
+.. autoclass:: dml.stats.mixture.MixtureDistribution
    :members:
    :special-members: __init__
 
 MixtureEstimator
 -----------------------------
 
-.. autoclass:: pysp.stats.mixture.MixtureEstimator
+.. autoclass:: dml.stats.mixture.MixtureEstimator
    :members:
    :special-members: __init__
 
 MixtureSampler
 --------------------------
 
-.. autoclass:: pysp.stats.mixture.MixtureSampler
+.. autoclass:: dml.stats.mixture.MixtureSampler
    :members:
 
 

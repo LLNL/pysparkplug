@@ -17,20 +17,20 @@ where the initial group membership is drawn :math:`P(Z_1 = k_1) = \pi_{k_1}` and
 JointMixtureDistribution
 ---------------------------------
 
-.. autoclass:: pysp.stats.jmixture.JointMixtureDistribution
+.. autoclass:: dml.stats.jmixture.JointMixtureDistribution
    :members:
    :special-members: __init__
 
 JointMixtureEstimator
 --------------------------------
 
-.. autoclass:: pysp.stats.jmixture.JointMixtureEstimator
+.. autoclass:: dml.stats.jmixture.JointMixtureEstimator
    :members:
    :special-members: __init__
 
 JointMixtureSampler
 -------------------------------
 
-.. autoclass:: pysp.stats.jmixture.JointMixtureSampler
+.. autoclass:: dml.stats.jmixture.JointMixtureSampler
    :members:
 
