@@ -1,6 +1,4 @@
 """A detailed example of heterogenous SNE embeddings."""
-import os
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
 from dml.stats import *
 from dml.utils.htsne import htsne

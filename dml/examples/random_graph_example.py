@@ -1,9 +1,5 @@
 """Example use for IntegerBernoulliSetDistribution for random graph generation."""
 import numpy as np
-import os
-
-os.environ['NUMBA_DISABLE_JIT'] = '1'
-
 from dml.stats import *
 from dml.utils.estimation import optimize
 

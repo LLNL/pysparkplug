@@ -1,6 +1,4 @@
 """Detailed example of estimation and model validation with a test set."""
-import os
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
 from dml.stats import *
 from dml.utils.estimation import empirical_kl_divergence, partition_data

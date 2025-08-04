@@ -1,8 +1,5 @@
 """Any example of how to use automatic to select an estimator from data."""
-import os
 import numpy as np
-os.environ['NUMBA_DISABLE_JIT'] = '1'
-
 from dml.stats import *
 from dml.utils.automatic import get_estimator
 
