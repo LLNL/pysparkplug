@@ -6,7 +6,7 @@ User Defined Classes
 
     import sys 
     import os
-    os.environ['NUMBA_DISABLE_JIT'] = '1'
+    
 
     sys.path.insert(0, os.path.abspath('path/to/DMLearn'))
 

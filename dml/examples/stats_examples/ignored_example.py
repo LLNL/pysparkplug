@@ -6,12 +6,9 @@ when estimating distributions. Example use case below is a
 two component mixture with one of the topics fixed.
 
 """ 
-import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 from numpy.random import RandomState
 from dml.stats import *
 from dml.utils.estimation import optimize
-
 
 if __name__ == '__main__':
     n = int(1e4)

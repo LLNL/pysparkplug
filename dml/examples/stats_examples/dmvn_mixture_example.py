@@ -4,8 +4,6 @@ generate data, estimate, and evaluate likelihoods.
 This is a fast implementation of Mixture([DiagonalGaussianDistribution()]*K).
 
 """ 
-import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 from numpy.random import RandomState
 from dml.stats import *
 from dml.utils.estimation import optimize

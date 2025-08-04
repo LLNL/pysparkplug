@@ -1,9 +1,5 @@
 """Example of Bernoulli set edit distribution. Transition probabilities for sets are printed out for fit."""
 import numpy as np
-import os
-
-os.environ['NUMBA_DISABLE_JIT'] = '1'
-
 from dml.stats import *
 from dml.utils.estimation import optimize
 

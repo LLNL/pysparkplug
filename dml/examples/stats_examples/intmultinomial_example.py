@@ -1,6 +1,4 @@
 """IntegerMultinomialDistribution example on generated data.""" 
-import os
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
 from dml.stats import *
 from dml.utils.estimation import optimize

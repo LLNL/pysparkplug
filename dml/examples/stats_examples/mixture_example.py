@@ -1,8 +1,6 @@
 """Simulate data and estimate from a Mixture distribution.
 This example demonstrates the use of keys for mixture comps 
 as well as the use of composite mixtures. """
-import os
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
 from dml.stats import *
 from dml.utils.estimation import optimize, partition_data

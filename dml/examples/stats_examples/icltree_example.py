@@ -6,8 +6,6 @@ dependencies. In contrast to Markov chains, the feature order
 can be learned. 
 
 """ 
-import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import numpy as np
 from numpy.random import RandomState
 from dml.stats import *

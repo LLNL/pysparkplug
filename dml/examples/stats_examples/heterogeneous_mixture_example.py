@@ -5,8 +5,6 @@ HeterogeneousMixtureDistribution allows for a mixture with differnt
 distribtions as the components. The comps must have the same support.
 
 """ 
-import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 from numpy.random import RandomState
 from dml.stats import *
 from dml.utils.estimation import optimize

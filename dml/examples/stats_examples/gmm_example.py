@@ -10,7 +10,7 @@ univariate, and much faster for univariate case.
 
 """ 
 import os
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
+
 from numpy.random import RandomState
 from dml.stats import *
 from dml.utils.estimation import optimize

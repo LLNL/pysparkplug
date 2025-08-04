@@ -1,7 +1,5 @@
 """Generate data and fit a hierarchical mixture model. 
 This is a mixture sequence mixture distribution."""
-import os
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
 from dml.stats import *
 from dml.utils.estimation import optimize

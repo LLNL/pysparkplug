@@ -1,8 +1,5 @@
+"""Example for Spearman Rho Ranking distribution."""
 import numpy as np
-import os
-
-os.environ['NUMBA_DISABLE_JIT'] = '1'
-
 from dml.stats.spearman_rho import SpearmanRankingDistribution, SpearmanRankingEstimator
 from dml.utils.estimation import optimize
 

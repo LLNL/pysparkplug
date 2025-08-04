@@ -2,7 +2,6 @@
 Note: Model fit is significantly faster with numba use.
 """
 import numpy as np
-
 from dml.stats import *
 from dml.utils.estimation import optimize
 

@@ -1,9 +1,6 @@
 """LDA example of fake data ranking top words in each document for model fits."""
-import os
 import sys
-os.environ['NUMBA_DISABLE_JIT'] =  '1'
 import numpy as np
-
 import dml.utils.optsutil as ops
 from dml.stats import *
 

@@ -1,7 +1,4 @@
 """Example of semi-supervised mixture example. Note that None is included for obs with no known labels."""
-import os
-
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 from dml.stats import *
 from dml.stats.ss_mixture import *
 from dml.utils.estimation import best_of

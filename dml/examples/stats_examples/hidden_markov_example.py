@@ -2,11 +2,6 @@
 Note that Numba is set for use here. """
 USE_NUMBA = True 
 import numpy as np
-import os
-if not USE_NUMBA:
-    os.environ['NUMBA_DISABLE_JIT'] = '1'
-
-
 from dml.stats import *
 from dml.utils.estimation import best_of, partition_data
 

@@ -1,6 +1,4 @@
 """Fit a joint mixture model to simulated data. Joint mixture is f(x) = sum_k pi_k*sum_j pi_{k,j} f_{k,j}(x)."""
-import os
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numpy as np
 from dml.stats import *
 from dml.utils.estimation import partition_data, best_of, empirical_kl_divergence
